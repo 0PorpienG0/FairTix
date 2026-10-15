@@ -3,6 +3,7 @@ import { createPublicClient, createWalletClient, defineChain, http, BaseError, t
 import { privateKeyToAccount } from "viem/accounts";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { createHmac } from "node:crypto";
 import deployment from "../../shared/deployment.json";
 import keys from "../../shared/demo-keys.json";
 import config from "../../shared/config.json";
@@ -56,7 +57,19 @@ function loadKeys(): KeyMap {
 let cachedKeys: KeyMap | null = null;
 const getKeyMap = (): KeyMap => (cachedKeys ??= loadKeys());
 
+/** Signed-in users (Clerk ids look like "user_2abc…") get a wallet derived from a server secret: no database needed. */
+export const isUserId = (name: string) => name.startsWith("user_");
+function derivedKey(userId: string): Hex {
+  const secret = process.env.WALLET_MASTER_SECRET;
+  if (!secret) throw new Error("WALLET_MASTER_SECRET is not set");
+  return `0x${createHmac("sha256", secret).update(userId).digest("hex")}`;
+}
+export function userWallet(userId: string): { name: string; address: Address } {
+  return { name: userId, address: privateKeyToAccount(derivedKey(userId)).address };
+}
+
 export function accountFor(name: string) {
+  if (isUserId(name)) return privateKeyToAccount(derivedKey(name));
   const k = name === "treasury" && process.env.TREASURY_PRIVATE_KEY ? process.env.TREASURY_PRIVATE_KEY : getKeyMap()[name]?.privateKey;
   if (!k) throw new Error(`No demo key for "${name}"`);
   return privateKeyToAccount(k as Hex);

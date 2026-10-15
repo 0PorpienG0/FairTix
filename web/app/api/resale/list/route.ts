@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
-import { abis, addr, friendlyError, read, resolveWallet, send, walletFor } from "@/lib/chain";
+import { abis, addr, friendlyError, read, send, walletFor } from "@/lib/chain";
+import { ensureGas, identify } from "@/lib/identity";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
-    const { wallet, tokenId, price } = (await req.json()) as { wallet: string; tokenId: string | number; price: string | number };
-    const w = resolveWallet(wallet);
-    if (!w) return NextResponse.json({ ok: false, error: "Unknown wallet" }, { status: 400 });
+    const { wallet, tokenId, price } = (await req.json()) as { wallet?: string; tokenId: string | number; price: string | number };
+    const w = await identify(wallet);
+    if (!w) return NextResponse.json({ ok: false, error: "Please sign in" }, { status: 401 });
+    await ensureGas(w.address);
     const id = BigInt(tokenId);
     const wc = walletFor(w.name);
     const hashes: string[] = [];

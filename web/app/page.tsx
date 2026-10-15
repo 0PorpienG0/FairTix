@@ -13,7 +13,7 @@ const steps = [
 ];
 
 export default function BuyPage() {
-  const { wallet } = useWallet();
+  const { wallet, label, signedIn, signIn } = useWallet();
   const toast = useToast();
   const { data, refresh } = useChainState(null, 5000);
   const [busy, setBusy] = useState(false);
@@ -31,6 +31,7 @@ export default function BuyPage() {
   const low = !!data && left > 0 && left <= Math.ceil(max * 0.2);
 
   async function pay() {
+    if (!signedIn) return signIn();
     setBusy(true);
     setLastTx(null);
     const r = await postJson("/api/checkout", { buyer: wallet });
@@ -38,11 +39,11 @@ export default function BuyPage() {
     if (!r.ok) return toast({ kind: "error", title: "Purchase failed", body: r.error });
     if (r.url) { window.location.href = r.url; return; }
     setLastTx(r.txHash ?? null);
-    toast({ kind: "success", title: `Ticket issued to ${wallet}`, body: `Organizer received ${usd(config.organizerShare)} instantly.`, txHash: r.txHash });
+    toast({ kind: "success", title: `Ticket issued to ${label}`, body: `Organizer received ${usd(config.organizerShare)} instantly.`, txHash: r.txHash });
     refresh();
   }
 
-  const cta = busy ? "Processing…" : soldOut ? "Sold out" : `Get ticket · ${usd(total)}`;
+  const cta = busy ? "Processing…" : soldOut ? "Sold out" : !signedIn ? `Sign in to buy · ${usd(total)}` : `Get ticket · ${usd(total)}`;
 
   return (
     <div className="space-y-8">
@@ -126,7 +127,7 @@ export default function BuyPage() {
 
             <div className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2 text-xs text-slate-400">
               <span>Booking as</span>
-              <b className="capitalize text-slate-100">{wallet}</b>
+              <b className="capitalize text-slate-100">{signedIn ? label : "not signed in"}</b>
             </div>
 
             <button className="btn hidden w-full lg:inline-flex" disabled={busy || soldOut} onClick={pay}>{cta}</button>
@@ -152,7 +153,7 @@ export default function BuyPage() {
               <div className="rise rounded-xl border border-mint/40 bg-mint/10 p-3 text-sm">
                 <div className="font-semibold text-mint">You&apos;re in!</div>
                 <div className="mt-1 text-xs text-slate-300">Receipt <TxHash hash={lastTx} /></div>
-                <Link href={`/tickets?wallet=${wallet}`} className="mt-2 inline-block text-xs font-semibold text-white underline underline-offset-2">View my tickets →</Link>
+                <Link href="/tickets" className="mt-2 inline-block text-xs font-semibold text-white underline underline-offset-2">View my tickets →</Link>
               </div>
             )}
           </div>

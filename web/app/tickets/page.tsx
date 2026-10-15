@@ -13,14 +13,16 @@ const pctFee = Number(FEE_BPS) / 100;
 const pctSeller = 100 - pctRoy - pctFee;
 
 export default function TicketsPage() {
-  const { wallet } = useWallet();
+  const { wallet, label, signedIn, signIn } = useWallet();
   const toast = useToast();
-  const { data, error, refresh } = useChainState(wallet, 3000);
+  const { data, error, refresh } = useChainState(signedIn ? wallet : null, 3000);
   const [busy, setBusy] = useState<string | null>(null);
 
   async function act(key: string, url: string, body: unknown, okTitle: string) {
+    if (!signedIn) { signIn(); return; }
     setBusy(key);
     const r = await postJson(url, body);
+    if (r.ok && r.url) { window.location.href = r.url; return; } // no USDC: pay this ticket by card
     setBusy(null);
     if (r.ok) toast({ kind: "success", title: okTitle, txHash: r.txHash });
     else toast({ kind: "error", title: r.errorName === "PriceAboveCap" && CAP_BPS > 0 ? "Listing rejected (PriceAboveCap)" : "Transaction failed", body: r.error });
@@ -32,21 +34,31 @@ export default function TicketsPage() {
   const owned = data?.tickets.length ?? 0;
   const listed = data?.myListings.length ?? 0;
 
+  if (!signedIn) {
+    return (
+      <div className="card mx-auto flex max-w-md flex-col items-center gap-3 py-12 text-center">
+        <div className="font-display text-xl font-bold">Sign in to see your tickets</div>
+        <p className="text-sm text-slate-400">Sign in with Google. Your tickets and wallet are created for you, no crypto knowledge needed.</p>
+        <button className="btn mt-1" onClick={signIn}>Sign in</button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <span className="grid h-14 w-14 place-items-center rounded-full border border-edge bg-raise font-display text-2xl font-bold text-white">
-            {wallet[0].toUpperCase()}
+            {(label[0] ?? "?").toUpperCase()}
           </span>
           <div>
-            <h1 className="font-display text-2xl font-bold capitalize sm:text-3xl">{wallet}&apos;s tickets</h1>
+            <h1 className="font-display text-2xl font-bold capitalize sm:text-3xl">{label}&apos;s tickets</h1>
             <p className="font-mono text-xs text-slate-500">{data?.wallet?.address ?? "…"}</p>
           </div>
         </div>
         <div className="card flex items-center gap-4 !py-3">
           <div>
-            <div className="label">Test USDC balance</div>
+            <div className="label" title="Money from selling tickets lands here. Use it to buy other tickets, or pay by card.">Test USDC balance</div>
             <div className="font-display text-xl font-bold text-mint">{data?.wallet ? usd(data.wallet.usdc) : "…"}</div>
           </div>
           <div className="h-8 w-px bg-edge" />

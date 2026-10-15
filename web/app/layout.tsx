@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Inter, Space_Grotesk } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
 import { Header } from "@/components/Header";
@@ -13,8 +14,11 @@ export const metadata: Metadata = {
   description: "Primary sales via card, fair resale with artist royalties, instant organizer payouts.",
 };
 
+const clerkOn = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+const clerkLook = { variables: { colorPrimary: "#fafafa", colorBackground: "#111113", colorText: "#fafafa", colorTextOnPrimaryBackground: "#09090b", colorInputBackground: "#09090b", colorInputText: "#fafafa", colorTextSecondary: "#a1a1aa" } };
+
 export default function RootLayout({ children }: { children: ReactNode }) {
-  return (
+  const page = (
     <html lang="en" className={`${body.variable} ${display.variable}`}>
       <body className="min-h-screen font-sans">
         <Providers>
@@ -27,4 +31,5 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </body>
     </html>
   );
+  return clerkOn ? <ClerkProvider appearance={clerkLook}>{page}</ClerkProvider> : page;
 }

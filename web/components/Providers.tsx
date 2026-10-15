@@ -1,5 +1,6 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { useClerk, useUser } from "@clerk/nextjs";
 import { txUrl, short } from "@/lib/format";
 import type { ApiResult, StateResponse, WalletName } from "@/lib/types";
 
@@ -10,9 +11,24 @@ const ToastCtx = createContext<(t: ToastInput) => void>(() => {});
 export const useToast = () => useContext(ToastCtx);
 
 /* ---------- wallet ---------- */
-interface WalletCtx { wallet: WalletName; setWallet: (w: WalletName) => void }
-const WalletContext = createContext<WalletCtx>({ wallet: "alice", setWallet: () => {} });
+/**
+ * `wallet` is what API calls send: "alice"/"bob" in demo mode, "me" when Clerk is on (the server reads the session instead).
+ * `label` is the name shown in the UI; `signIn()` opens the Clerk modal.
+ */
+interface WalletCtx { wallet: string; setWallet: (w: WalletName) => void; label: string; signedIn: boolean; clerk: boolean; signIn: () => void }
+const WalletContext = createContext<WalletCtx>({ wallet: "alice", setWallet: () => {}, label: "alice", signedIn: true, clerk: false, signIn: () => {} });
 export const useWallet = () => useContext(WalletContext);
+
+export const clerkOn = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+function useClerkIdentity() {
+  const { isSignedIn, user } = useUser();
+  const { openSignIn } = useClerk();
+  const label = user?.firstName || user?.primaryEmailAddress?.emailAddress.split("@")[0] || "you";
+  return { signedIn: !!isSignedIn, label, signIn: () => openSignIn() };
+}
+const useNoClerk = () => ({ signedIn: true, label: "", signIn: () => {} });
+// clerkOn is fixed at build time, so the same hook runs on every render.
+const useIdentity = clerkOn ? useClerkIdentity : useNoClerk;
 
 export function TxHash({ hash }: { hash: string }) {
   const url = txUrl(hash);
@@ -28,6 +44,7 @@ export function Providers({ children }: { children: ReactNode }) {
   const [wallet, setWalletState] = useState<WalletName>("alice");
   const [toasts, setToasts] = useState<Toast[]>([]);
   const nextId = useRef(1);
+  const ident = useIdentity();
 
   useEffect(() => {
     try {
@@ -51,7 +68,7 @@ export function Providers({ children }: { children: ReactNode }) {
   const icon = { success: "✓", error: "✕", info: "i" } as const;
 
   return (
-    <WalletContext.Provider value={{ wallet, setWallet }}>
+    <WalletContext.Provider value={{ wallet: clerkOn ? "me" : wallet, setWallet, label: clerkOn ? ident.label : wallet, signedIn: ident.signedIn, clerk: clerkOn, signIn: ident.signIn }}>
       <ToastCtx.Provider value={push}>
         {children}
         <div className="pointer-events-none fixed bottom-4 right-4 z-50 flex w-[min(92vw,380px)] flex-col gap-2">

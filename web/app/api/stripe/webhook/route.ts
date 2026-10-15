@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { fulfil } from "@/lib/fulfil";
+import { buyListing, creditUsdc, fulfil, usdcOf } from "@/lib/fulfil";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -41,7 +41,25 @@ export async function POST(req: Request) {
     try {
       if (await alreadyHandled(stripe, piId)) return NextResponse.json({ received: true, duplicate: true });
       if (piId) await stripe.paymentIntents.update(piId, { metadata: { fulfil_claim: String(Date.now()) } });
-      const { txHash } = await fulfil(buyer);
+      let txHash: string;
+      if (s.metadata?.kind === "resale") {
+        const name = s.metadata.buyerName;
+        if (!name || !s.metadata.listingId) throw new Error("Resale metadata missing");
+        try {
+          // The card payment is converted to USDC for the buyer (mocked by the treasury), then the listing is bought on-chain.
+          const hashes = await buyListing(name, buyer as `0x${string}`, BigInt(s.metadata.listingId), true);
+          txHash = hashes[hashes.length - 1];
+        } catch (e) {
+          // Someone else bought it first: keep the card payment as USDC in the buyer's wallet so they can pick another ticket.
+          if (!/no longer active/i.test((e as Error).message)) throw e;
+          const paid = BigInt(s.amount_total ?? 0) * 10000n; // cents -> 6-decimal USDC
+          const bal = await usdcOf(buyer);
+          if (bal < paid) await creditUsdc(buyer, paid - bal);
+          txHash = "credited-listing-sold";
+        }
+      } else {
+        txHash = (await fulfil(buyer)).txHash;
+      }
       if (piId) await stripe.paymentIntents.update(piId, { metadata: { fulfilled_tx: txHash, fulfil_claim: "" } });
       return NextResponse.json({ received: true, txHash });
     } catch (e) {

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { Address } from "viem";
-import { abis, addr, getEvents, config, dep, friendlyError, maxPriceMicro, nameOf, publicClient, read, resolveWallet } from "@/lib/chain";
+import { abis, addr, getEvents, config, dep, friendlyError, maxPriceMicro, nameOf, publicClient, read } from "@/lib/chain";
+import { ensureGas, identify } from "@/lib/identity";
 import type { Listing, ResaleEvent, SaleEvent, StateResponse } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -10,8 +11,8 @@ const argsOf = (l: unknown) => (l as { args: Args }).args;
 
 export async function GET(req: Request) {
   try {
-    const w = new URL(req.url).searchParams.get("wallet");
-    const me = w ? resolveWallet(w) : null;
+    const me = await identify(new URL(req.url).searchParams.get("wallet"));
+    if (me) await ensureGas(me.address).catch(() => {}); // first sign-in: send a small gas drip so the user can transact
     const bal = (a: string) => read<bigint>(addr.usdc, abis.usdc, "balanceOf", [a]);
 
     const [organizer, platform, artist, sold, nextId, block, saleLogs, resaleLogs] = await Promise.all([

@@ -9,7 +9,7 @@ import type { Listing, MarketplaceResponse } from "@/lib/types";
 type Sort = "low" | "high" | "new";
 
 export default function MarketplacePage() {
-  const { wallet } = useWallet();
+  const { wallet, label, signedIn, signIn } = useWallet();
   const toast = useToast();
   const [data, setData] = useState<MarketplaceResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -40,16 +40,19 @@ export default function MarketplacePage() {
   useEffect(() => {
     let alive = true;
     setMe(null);
+    if (!signedIn) return;
     fetch(`/api/state?wallet=${wallet}`, { cache: "no-store" })
       .then((r) => r.json())
       .then((j) => { if (alive) setMe(j?.wallet?.address?.toLowerCase() ?? null); })
       .catch(() => {});
     return () => { alive = false; };
-  }, [wallet]);
+  }, [wallet, signedIn]);
 
   async function act(key: string, url: string, body: unknown, okTitle: string) {
+    if (!signedIn) { signIn(); return; }
     setBusy(key);
     const r = await postJson(url, body);
+    if (r.ok && r.url) { window.location.href = r.url; return; } // not enough USDC: pay this ticket by card
     setBusy(null);
     if (r.ok) toast({ kind: "success", title: okTitle, txHash: r.txHash });
     else toast({ kind: "error", title: "Transaction failed", body: r.error });
@@ -76,7 +79,8 @@ export default function MarketplacePage() {
             <h1 className="mt-3 font-display text-3xl font-bold text-white sm:text-4xl">Resale market</h1>
             <p className="mt-1 max-w-xl text-sm text-slate-400">
               Verified tickets from real fans for {data?.eventName ?? "…"}. The artist and platform are paid automatically on every sale.
-              You&apos;re buying as <span className="font-semibold capitalize">{wallet}</span>.
+              {signedIn ? <>You&apos;re buying as <span className="font-semibold capitalize">{label}</span>.</> : "Sign in to buy."}
+              {" "}Pay with your USDC balance from past sales, or by card if you don&apos;t have enough.
             </p>
           </div>
           <div className="rounded-2xl border border-edge bg-raise px-5 py-3">
