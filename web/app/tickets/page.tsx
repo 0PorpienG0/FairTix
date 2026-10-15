@@ -1,13 +1,14 @@
 "use client";
 import { useState } from "react";
-import config from "../../../shared/config.json";
 import { postJson, useChainState, useToast, useWallet } from "@/components/Providers";
-import { parseUsd, usd } from "@/lib/format";
+import { CAP_BPS, FEE_BPS, ROYALTY_BPS, parseUsd, splitResale, usd } from "@/lib/format";
+import config from "../../../shared/config.json";
 import type { Listing } from "@/lib/types";
 
-const cap = (BigInt(config.faceValue) * BigInt(config.resaleCapBps)) / 10000n;
-const royalty = BigInt(config.royaltyFlat);
-const platformFee = BigInt(config.resaleFeeFlat);
+const cap = (BigInt(config.faceValue) * BigInt(CAP_BPS)) / 10000n; // 0n = no cap
+const pctRoy = Number(ROYALTY_BPS) / 100;
+const pctFee = Number(FEE_BPS) / 100;
+const pctSeller = 100 - pctRoy - pctFee;
 
 export default function TicketsPage() {
   const { wallet } = useWallet();
@@ -20,7 +21,7 @@ export default function TicketsPage() {
     const r = await postJson(url, body);
     setBusy(null);
     if (r.ok) toast({ kind: "success", title: okTitle, txHash: r.txHash });
-    else toast({ kind: "error", title: r.errorName === "PriceAboveCap" ? "Listing rejected (PriceAboveCap)" : "Transaction failed", body: r.error });
+    else toast({ kind: "error", title: r.errorName === "PriceAboveCap" && CAP_BPS > 0 ? "Listing rejected (PriceAboveCap)" : "Transaction failed", body: r.error });
     refresh();
     return r;
   }
@@ -54,7 +55,7 @@ export default function TicketsPage() {
                 <div className="font-bold">Ticket #{l.tokenId}</div>
                 <span className="rounded-full bg-brand/20 px-2 py-0.5 text-xs text-brand">Listed · {usd(l.price)}</span>
               </div>
-              <p className="mt-2 text-xs text-slate-400">Escrowed in the marketplace. You receive {usd(BigInt(l.price) - royalty - platformFee)} when sold.</p>
+              <p className="mt-2 text-xs text-slate-400">Escrowed in the marketplace. You receive {usd(splitResale(BigInt(l.price)).seller)} when sold ({pctSeller}% of the price).</p>
               <button className="btn-ghost mt-3" disabled={busy === `c${l.id}`} onClick={() => act(`c${l.id}`, "/api/resale/cancel", { wallet, listingId: l.id }, `Listing #${l.id} cancelled, ticket returned`)}>
                 {busy === `c${l.id}` ? "Cancelling…" : "Cancel listing"}
               </button>
@@ -73,7 +74,7 @@ export default function TicketsPage() {
                 <div className="font-bold">Ticket #{l.tokenId}</div>
                 <div className="font-mono text-lg">{usd(l.price)}</div>
               </div>
-              <p className="mt-1 text-xs text-slate-400">Seller: <span className="capitalize">{l.sellerName ?? l.seller}</span> · includes {usd(royalty)} artist royalty + {usd(platformFee)} platform fee</p>
+              <p className="mt-1 text-xs text-slate-400">Seller: <span className="capitalize">{l.sellerName ?? l.seller}</span> · includes {usd(splitResale(BigInt(l.price)).royalty)} artist royalty ({pctRoy}%) + {usd(splitResale(BigInt(l.price)).fee)} platform fee ({pctFee}%)</p>
               <button className="btn mt-3 w-full" disabled={busy === `b${l.id}`} onClick={() => act(`b${l.id}`, "/api/resale/buy", { wallet, listingId: l.id }, `Bought ticket #${l.tokenId} for ${usd(l.price)}`)}>
                 {busy === `b${l.id}` ? "Buying…" : `Buy as ${wallet} · ${usd(l.price)}`}
               </button>
@@ -88,9 +89,9 @@ export default function TicketsPage() {
 function ListForm({ tokenId, busy, onSubmit }: { tokenId: string; busy: boolean; onSubmit: (price: bigint) => void }) {
   const [txt, setTxt] = useState("60");
   const price = parseUsd(txt);
-  const over = price !== null && price > cap;
-  const under = price !== null && price < royalty + platformFee;
-  const receive = price !== null && !under ? price - royalty - platformFee : null;
+  const valid = price !== null && price > 0n;
+  const over = valid && cap > 0n && price > cap;
+  const sp = valid ? splitResale(price) : null;
 
   return (
     <div className="card">
@@ -103,17 +104,16 @@ function ListForm({ tokenId, busy, onSubmit }: { tokenId: string; busy: boolean;
         <span className="text-slate-400">$</span>
         <input className="input font-mono" inputMode="decimal" value={txt} onChange={(e) => setTxt(e.target.value)} />
       </div>
-      <div className="mt-1 text-xs text-slate-400">Max allowed: <b className="text-slate-200">{usd(cap)}</b> ({config.resaleCapBps / 100}% of {usd(config.faceValue)})</div>
 
       <dl className="mt-3 space-y-1 rounded-lg bg-white/5 p-3 text-xs">
         <Line k="Sale price" v={price !== null ? usd(price) : "—"} />
-        <Line k="Artist royalty" v={`-${usd(royalty)}`} />
-        <Line k="Platform fee" v={`-${usd(platformFee)}`} />
+        <Line k={`Artist royalty (${pctRoy}%)`} v={sp ? `-${usd(sp.royalty)}` : "—"} />
+        <Line k={`Platform fee (${pctFee}%)`} v={sp ? `-${usd(sp.fee)}` : "—"} />
         <div className="border-t border-edge pt-1" />
-        <Line k="You receive" v={receive !== null ? usd(receive) : "—"} strong />
+        <Line k={`You receive (${pctSeller}%)`} v={sp ? usd(sp.seller) : "—"} strong />
       </dl>
-      {over && <p className="mt-2 text-xs text-amber-300">Above the cap — you can still submit to see the contract reject it (PriceAboveCap).</p>}
-      <button className="btn mt-3 w-full" disabled={busy || price === null} onClick={() => price !== null && onSubmit(price)}>
+      {over && <p className="mt-2 text-xs text-amber-300">Above the resale cap of {usd(cap)}; the contract will reject this listing.</p>}
+      <button className="btn mt-3 w-full" disabled={busy || !valid} onClick={() => valid && onSubmit(price)}>
         {busy ? "Submitting…" : "List for resale"}
       </button>
     </div>

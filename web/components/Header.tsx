@@ -6,6 +6,7 @@ import type { WalletName } from "@/lib/types";
 
 const links = [
   { href: "/", label: "Buy ticket" },
+  { href: "/marketplace", label: "Marketplace" },
   { href: "/tickets", label: "My tickets" },
   { href: "/organizer", label: "Organizer" },
 ];

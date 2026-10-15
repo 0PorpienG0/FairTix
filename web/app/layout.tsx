@@ -6,7 +6,7 @@ import { Header } from "@/components/Header";
 
 export const metadata: Metadata = {
   title: "FairTix - fair on-chain ticketing",
-  description: "Primary sales via card, capped resale, instant organizer payouts.",
+  description: "Primary sales via card, fair resale with artist royalties, instant organizer payouts.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

@@ -16,6 +16,19 @@ export function parseUsd(s: string): bigint | null {
   return BigInt(w) * 1_000_000n + BigInt(f.padEnd(6, "0"));
 }
 
+import config from "../../shared/config.json";
+
+export const ROYALTY_BPS = BigInt(config.royaltyBps);
+export const FEE_BPS = BigInt(config.resaleFeeBps);
+export const CAP_BPS = Number(config.resaleCapBps);
+
+/** Resale split, same rounding as the Marketplace contract: integer division, seller gets the remainder. */
+export function splitResale(price: bigint, royaltyBps: bigint = ROYALTY_BPS, feeBps: bigint = FEE_BPS) {
+  const royalty = (price * royaltyBps) / 10000n;
+  const fee = (price * feeBps) / 10000n;
+  return { royalty, fee, seller: price - royalty - fee };
+}
+
 export function short(addr: string): string {
   return addr.length > 12 ? `${addr.slice(0, 6)}…${addr.slice(-4)}` : addr;
 }

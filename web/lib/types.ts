@@ -19,4 +19,17 @@ export interface StateResponse {
   block: string;
 }
 
+export interface MarketResale extends ResaleEvent { buyerName: string | null }
+export interface MarketplaceResponse {
+  listings: Listing[];
+  resales: MarketResale[];
+  stats: { activeCount: number; cap: string; /* "0" = no cap */ floor: string | null; totalResales: number; totalVolume: string };
+  faceValue: string;
+  eventName: string;
+  royaltyBps: number;
+  feeBps: number;
+  capBps: number;
+  block: string;
+}
+
 export interface ApiResult { ok: boolean; txHash?: string; txHashes?: string[]; url?: string; error?: string; errorName?: string; demo?: boolean; tokenId?: string }

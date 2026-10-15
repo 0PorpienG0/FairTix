@@ -57,7 +57,7 @@ export default function OrganizerPage() {
       </section>
 
       <section className="card">
-        <h2 className="mb-3 text-lg font-bold">Secondary sales (capped resale)</h2>
+        <h2 className="mb-3 text-lg font-bold">Secondary sales (royalty + platform fee)</h2>
         {data && data.resales.length === 0 && <p className="text-sm text-slate-400">No resales yet.</p>}
         <ul className="divide-y divide-edge text-sm">
           {data?.resales.map((r) => (

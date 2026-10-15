@@ -37,11 +37,11 @@ export default function BuyPage() {
         <div className="mb-4 h-44 rounded-xl bg-gradient-to-br from-brand via-fuchsia-500 to-orange-400 p-5">
           <div className="text-xs font-semibold uppercase tracking-widest text-white/80">Live tonight</div>
           <h1 className="mt-2 text-3xl font-extrabold leading-tight">{config.eventName}</h1>
-          <p className="mt-1 text-sm text-white/80">General admission · NFT ticket, transfers only via capped marketplace</p>
+          <p className="mt-1 text-sm text-white/80">General admission · NFT ticket, transfers only via the official marketplace</p>
         </div>
         <ul className="space-y-2 text-sm text-slate-300">
           <li>✓ Pay by card — no crypto wallet needed</li>
-          <li>✓ Resale capped at {config.resaleCapBps / 100}% of face value ({usd((BigInt(config.faceValue) * BigInt(config.resaleCapBps)) / 10000n)}) — no scalping</li>
+          <li>✓ Resale pays the artist {config.royaltyBps / 100}% and the platform {config.resaleFeeBps / 100}% automatically</li>
           <li>✓ Organizer is paid instantly on-chain: {usd(config.organizerShare)} per ticket</li>
         </ul>
         <div className="mt-5 text-sm text-slate-400">
@@ -64,6 +64,7 @@ export default function BuyPage() {
           Stripe keeps the {usd(fee)} fee. The remaining <b className="text-slate-200">{usd(face)}</b> is converted to USDC and
           split on-chain: {usd(config.organizerShare)} organizer / {usd(config.platformShare)} platform.
         </p>
+        <p className="mt-2 text-xs text-slate-400">Organizer receives {usd(config.organizerShare)} instantly · platform fee {usd(config.platformShare)}</p>
 
         <div className="mt-4 text-xs text-slate-400">Buying as <b className="capitalize text-slate-100">{wallet}</b> (switch in header)</div>
         <button className="btn mt-2 w-full" disabled={busy || soldOut} onClick={pay}>
