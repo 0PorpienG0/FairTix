@@ -15,7 +15,13 @@ export const metadata: Metadata = {
 };
 
 const clerkOn = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-const clerkLook = { variables: { colorPrimary: "#fafafa", colorBackground: "#111113", colorText: "#fafafa", colorTextOnPrimaryBackground: "#09090b", colorInputBackground: "#09090b", colorInputText: "#fafafa", colorTextSecondary: "#a1a1aa" } };
+const clerkLook = { variables: { colorPrimary: "#fafafa", colorBackground: "#111113", colorText: "#fafafa", colorTextOnPrimaryBackground: "#09090b", colorInputBackground: "#09090b", colorInputText: "#fafafa", colorTextSecondary: "#a1a1aa" },
+  elements: {
+    // Clerk's default dark-on-dark made the Google button unreadable: use a light button with dark text.
+    socialButtonsBlockButton: { backgroundColor: "#fafafa", border: "1px solid #fafafa" },
+    socialButtonsBlockButtonText: { color: "#09090b", fontWeight: 600 },
+  },
+};
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   const page = (
