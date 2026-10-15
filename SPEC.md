@@ -77,3 +77,10 @@ Chain reads via viem `publicClient` from `shared/deployment.json`.
 2. `npx hardhat node` + `npx hardhat run scripts/deploy.ts --network localhost` succeeds and writes shared/deployment.json.
 3. `cd web && npm run build` passes; pages load.
 4. `scripts/e2e.ts` (run against local node + `next start`): buy as Alice → organizer balance +49 → Alice list at 61 (cap 60) rejected → list at 60 OK → Bob buys → NFT owner Bob; artist +1, platform +1(+1 earlier), Alice gets 58.
+
+---
+# CHANGE 2 (overrides anything above that conflicts) — no resale cap, percentage fees
+New shared/config.json keys: `organizerShare` 48.5, `platformShare` 1.5 (still sum to faceValue), `resaleCapBps` = 0 (**0 = no cap; cap logic stays in the contract but is disabled**),
+`royaltyBps` = 1000 (10% of resale price -> artist), `resaleFeeBps` = 500 (5% of resale price -> platform). `royaltyFlat` / `resaleFeeFlat` are REMOVED.
+Marketplace.sol: constructor takes `(usdc, ticket, artist, platform, faceValue, capBps, royaltyBps, feeBps)`; `list` only checks the cap when `capBps != 0`; royalty = price*royaltyBps/10000, fee = price*feeBps/10000, sellerProceeds = price - royalty - fee (seller gets 85%). Minimum price: price > 0 and royalty+fee < price (always true). `maxPrice()` returns 0 when uncapped. Events/other function signatures unchanged.
+UI: no cap messaging; show fee % and amounts (preview scales with the entered price). Example: list at $120 -> artist $12, platform $6, seller $102.
