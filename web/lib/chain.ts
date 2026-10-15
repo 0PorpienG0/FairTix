@@ -158,7 +158,16 @@ export async function getEvents(address: Address, abi: Abi, eventName: string): 
     const batch = await Promise.all(ranges.slice(i, i + 8).map(([f, t]) => publicClient.getContractEvents({ address, abi, eventName, fromBlock: f, toBlock: t })));
     pages.push(...batch);
   }
-  const logs = c.logs.concat(...pages);
-  logCache.set(key, { to: head, logs });
+  // Dedupe by (tx, logIndex): concurrent requests share this cache and can refetch the same range.
+  const seen = new Set<string>();
+  const logs = c.logs.concat(...pages).filter((l) => {
+    const { transactionHash, logIndex } = l as { transactionHash: string; logIndex: number };
+    const id = `${transactionHash}:${logIndex}`;
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+  const cur = logCache.get(key);
+  if (!cur || cur.to < head) logCache.set(key, { to: head, logs }); // never move the cursor backwards
   return logs as never;
 }
