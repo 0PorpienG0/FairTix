@@ -40,15 +40,20 @@ type KeyMap = Record<string, { address: string; privateKey: string }>;
 /** Local chain: public Hardhat demo keys. Testnet: TESTNET_KEYS_JSON env (hosting) or shared/testnet-keys.json (gitignored). */
 function loadKeys(): KeyMap {
   if (dep.chainId === 31337) return keys as unknown as KeyMap;
-  if (process.env.TESTNET_KEYS_JSON) return JSON.parse(process.env.TESTNET_KEYS_JSON) as KeyMap;
+  if (process.env.TESTNET_KEYS_JSON) {
+    const parsed = JSON.parse(process.env.TESTNET_KEYS_JSON.trim());
+    return (typeof parsed === "string" ? JSON.parse(parsed) : parsed) as KeyMap;
+  }
   const f = join(process.cwd(), "..", "shared", "testnet-keys.json");
   if (existsSync(f)) return JSON.parse(readFileSync(f, "utf8")) as KeyMap;
   throw new Error("Testnet keys missing: run the deploy script or set TESTNET_KEYS_JSON");
 }
-const keyMap = loadKeys();
+// Loaded lazily so `next build` can collect page data without the secret env present.
+let cachedKeys: KeyMap | null = null;
+const getKeyMap = (): KeyMap => (cachedKeys ??= loadKeys());
 
 export function accountFor(name: string) {
-  const k = name === "treasury" && process.env.TREASURY_PRIVATE_KEY ? process.env.TREASURY_PRIVATE_KEY : keyMap[name]?.privateKey;
+  const k = name === "treasury" && process.env.TREASURY_PRIVATE_KEY ? process.env.TREASURY_PRIVATE_KEY : getKeyMap()[name]?.privateKey;
   if (!k) throw new Error(`No demo key for "${name}"`);
   return privateKeyToAccount(k as Hex);
 }
@@ -59,6 +64,7 @@ export function walletFor(name: string) {
 /** Resolve "alice" | "bob" | 0x address to {name,address}. */
 export function resolveWallet(w: string): { name: string; address: Address } | null {
   const lower = w.toLowerCase();
+  const keyMap = getKeyMap();
   for (const n of Object.keys(keyMap)) {
     if (n === lower || keyMap[n].address.toLowerCase() === lower) return { name: n, address: keyMap[n].address as Address };
   }
@@ -66,6 +72,7 @@ export function resolveWallet(w: string): { name: string; address: Address } | n
 }
 export function nameOf(address: string): string | null {
   const l = address.toLowerCase();
+  const keyMap = getKeyMap();
   for (const n of Object.keys(keyMap)) if (keyMap[n].address.toLowerCase() === l) return n;
   return null;
 }
