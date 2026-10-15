@@ -2,11 +2,47 @@
 @tailwind components;
 @tailwind utilities;
 
-body { @apply bg-ink text-slate-100 antialiased; background-image: radial-gradient(900px 400px at 80% -10%, rgba(124,92,255,.18), transparent), radial-gradient(700px 300px at -10% 10%, rgba(46,230,166,.08), transparent); background-attachment: fixed; }
+body {
+  @apply bg-ink text-slate-100 antialiased;
+  background-image:
+    radial-gradient(1000px 420px at 85% -12%, rgba(255, 61, 127, 0.16), transparent),
+    radial-gradient(800px 360px at -10% 8%, rgba(139, 108, 255, 0.14), transparent);
+  background-attachment: fixed;
+}
+
 .card { @apply rounded-2xl border border-edge bg-panel/90 p-5 shadow-lg shadow-black/20; }
-.btn { @apply inline-flex items-center justify-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50; }
-.btn-ghost { @apply inline-flex items-center justify-center rounded-xl border border-edge px-3 py-2 text-sm text-slate-200 transition hover:bg-white/5 disabled:opacity-50; }
+.btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold text-white transition hover:brightness-110 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50;
+  background-image: linear-gradient(100deg, #ff3d7f, #ff8a3d);
+  box-shadow: 0 8px 24px -8px rgba(255, 61, 127, 0.6);
+}
+.btn-ghost { @apply inline-flex items-center justify-center rounded-xl border border-edge px-3 py-2 text-sm text-slate-200 transition hover:border-slate-500 hover:bg-white/5 disabled:opacity-50; }
 .input { @apply w-full rounded-xl border border-edge bg-ink px-3 py-2 text-sm outline-none focus:border-brand; }
-.label { @apply text-xs uppercase tracking-wider text-slate-400; }
-@keyframes flash { from { background-color: rgba(46,230,166,.35); } to { background-color: rgba(46,230,166,.08); } }
+.label { @apply text-[11px] font-semibold uppercase tracking-widest text-slate-400; }
+.chip { @apply inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/25 px-3 py-1 text-xs font-medium text-white/90 backdrop-blur; }
+
+/* Ticket shape: main body, dashed perforation with side notches, stub */
+.ticket { @apply relative overflow-hidden rounded-2xl border border-edge bg-panel shadow-lg shadow-black/30; }
+.perf { @apply relative h-px border-t-2 border-dashed border-edge; }
+.perf::before, .perf::after {
+  content: ""; @apply absolute -top-[11px] h-5 w-5 rounded-full border border-edge bg-ink;
+}
+.perf::before { left: -11px; }
+.perf::after { right: -11px; }
+.barcode {
+  height: 34px; opacity: 0.55;
+  background: repeating-linear-gradient(90deg, #e2e8f0 0 2px, transparent 2px 4px, #e2e8f0 4px 5px, transparent 5px 9px, #e2e8f0 9px 12px, transparent 12px 14px);
+}
+
+.poster {
+  background:
+    radial-gradient(420px 260px at 82% 18%, rgba(255, 138, 61, 0.85), transparent 70%),
+    radial-gradient(520px 320px at 12% 90%, rgba(139, 108, 255, 0.9), transparent 70%),
+    linear-gradient(135deg, #ff3d7f 0%, #7a2cff 100%);
+}
+
+@keyframes flash { from { background-color: rgba(46, 230, 166, 0.35); } to { background-color: rgba(46, 230, 166, 0.08); } }
 .flash { animation: flash 1.6s ease-out; }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise 0.35s ease-out both; }
+@media (prefers-reduced-motion: reduce) { .rise, .flash { animation: none; } }

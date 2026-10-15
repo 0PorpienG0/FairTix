@@ -3,7 +3,20 @@ const config: Config = {
   content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
   theme: {
     extend: {
-      colors: { ink: "#0b0d14", panel: "#141824", edge: "#232a3d", brand: "#7c5cff", mint: "#2ee6a6" },
+      colors: {
+        ink: "#09070f",
+        panel: "#14101f",
+        raise: "#1b1629",
+        edge: "#2b2342",
+        brand: "#ff3d7f",
+        sun: "#ff8a3d",
+        violet: "#8b6cff",
+        mint: "#2ee6a6",
+      },
+      fontFamily: {
+        sans: ["var(--font-body)", "system-ui", "sans-serif"],
+        display: ["var(--font-display)", "var(--font-body)", "system-ui", "sans-serif"],
+      },
     },
   },
   plugins: [],
