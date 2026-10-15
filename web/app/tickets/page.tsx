@@ -36,7 +36,7 @@ export default function TicketsPage() {
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <span className="grid h-14 w-14 place-items-center rounded-full font-display text-2xl font-bold text-white" style={{ backgroundImage: "linear-gradient(135deg,#ff3d7f,#8b6cff)" }}>
+          <span className="grid h-14 w-14 place-items-center rounded-full border border-edge bg-raise font-display text-2xl font-bold text-white">
             {wallet[0].toUpperCase()}
           </span>
           <div>
@@ -62,7 +62,6 @@ export default function TicketsPage() {
         <h2 className="mb-3 font-display text-xl font-bold">Your tickets</h2>
         {data && owned === 0 && listed === 0 && (
           <div className="card flex flex-col items-center gap-3 py-10 text-center">
-            <div className="text-4xl" aria-hidden>🎟️</div>
             <div className="font-semibold">No tickets yet</div>
             <p className="max-w-sm text-sm text-slate-400">Grab a ticket for {config.eventName} and it will show up here.</p>
             <Link href="/#booking" className="btn mt-1">Get tickets</Link>
@@ -130,8 +129,8 @@ function OwnedTicket({ tokenId, busy, onSubmit }: { tokenId: string; busy: boole
       badge={<Badge tone="mint">Valid · ready to use</Badge>}
       main={
         <div className="flex items-center justify-between gap-4">
-          <div className="text-xs text-slate-400">Admit one<br />{config.eventName}</div>
-          <div className="barcode w-40" aria-hidden />
+          <div className="text-xs text-slate-400">{config.eventName}</div>
+          <div className="font-mono text-xs uppercase tracking-widest text-slate-500">Admit one</div>
         </div>
       }
       stub={

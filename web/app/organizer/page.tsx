@@ -37,16 +37,15 @@ export default function OrganizerPage() {
       {error && <div role="alert" className="rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300">{error}</div>}
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <div className="poster relative overflow-hidden rounded-2xl p-6 lg:col-span-2">
-          <div className="absolute inset-0 bg-black/35" />
-          <div className="relative">
-            <div className="label !text-white/75">Organizer received (test USDC)</div>
+        <div className="poster rounded-2xl p-6 lg:col-span-2">
+          <div>
+            <div className="label">Organizer received (test USDC)</div>
             <div className="mt-1 font-display text-5xl font-bold text-white">{data ? usd(data.balances.organizer) : "…"}</div>
-            <div className="mt-5 flex justify-between text-xs text-white/80">
+            <div className="mt-5 flex justify-between text-xs text-slate-400">
               <span>Tickets sold</span>
               <span>{data ? `${data.sold} / ${data.maxSupply}` : "…"}</span>
             </div>
-            <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-white/20" role="progressbar" aria-valuenow={Math.round(pctSold)} aria-valuemin={0} aria-valuemax={100} aria-label="Tickets sold">
+            <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-white/10" role="progressbar" aria-valuenow={Math.round(pctSold)} aria-valuemin={0} aria-valuemax={100} aria-label="Tickets sold">
               <div className="h-full rounded-full bg-white transition-all" style={{ width: `${pctSold}%` }} />
             </div>
           </div>

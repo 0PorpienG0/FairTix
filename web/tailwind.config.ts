@@ -4,14 +4,12 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: "#09070f",
-        panel: "#14101f",
-        raise: "#1b1629",
-        edge: "#2b2342",
-        brand: "#ff3d7f",
-        sun: "#ff8a3d",
-        violet: "#8b6cff",
-        mint: "#2ee6a6",
+        ink: "#09090b",
+        panel: "#111113",
+        raise: "#18181b",
+        edge: "#27272a",
+        brand: "#fafafa",
+        mint: "#34d399",
       },
       fontFamily: {
         sans: ["var(--font-body)", "system-ui", "sans-serif"],

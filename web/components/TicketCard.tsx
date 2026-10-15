@@ -11,17 +11,16 @@ export function TicketCard({ tokenId, badge, main, stub, tone = "default" }: {
   tone?: "default" | "listed";
 }) {
   return (
-    <article className={`ticket rise ${tone === "listed" ? "!border-brand/50" : ""}`}>
-      <div className="poster relative px-5 py-4">
-        <div className="absolute inset-0 bg-black/35" />
-        <div className="relative flex items-start justify-between gap-3">
+    <article className={`ticket rise ${tone === "listed" ? "!border-white/40" : ""}`}>
+      <div className="border-b border-edge bg-raise px-5 py-4">
+        <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="text-[11px] font-semibold uppercase tracking-widest text-white/80">{EVENT.tier}</div>
+            <div className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">{EVENT.tier}</div>
             <h3 className="mt-0.5 font-display text-lg font-bold leading-tight text-white">{config.eventName}</h3>
-            <div className="mt-1 text-xs text-white/80">{EVENT.date} · {EVENT.venue}</div>
+            <div className="mt-1 text-xs text-slate-400">{EVENT.date} · {EVENT.venue}</div>
           </div>
           <div className="text-right">
-            <div className="text-[10px] uppercase tracking-widest text-white/70">Ticket</div>
+            <div className="text-[10px] uppercase tracking-widest text-slate-500">Ticket</div>
             <div className="font-display text-2xl font-bold leading-none text-white">#{tokenId}</div>
           </div>
         </div>

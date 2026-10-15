@@ -69,19 +69,18 @@ export default function MarketplacePage() {
 
   return (
     <div className="space-y-8">
-      <section className="poster relative overflow-hidden rounded-3xl p-6 sm:p-8">
-        <div className="absolute inset-0 bg-gradient-to-t from-black/55 to-black/10" />
-        <div className="relative flex flex-wrap items-end justify-between gap-4">
+      <section className="poster rounded-3xl p-6 sm:p-8">
+        <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <span className="chip">Official resale</span>
             <h1 className="mt-3 font-display text-3xl font-bold text-white sm:text-4xl">Resale market</h1>
-            <p className="mt-1 max-w-xl text-sm text-white/85">
+            <p className="mt-1 max-w-xl text-sm text-slate-400">
               Verified tickets from real fans for {data?.eventName ?? "…"}. The artist and platform are paid automatically on every sale.
               You&apos;re buying as <span className="font-semibold capitalize">{wallet}</span>.
             </p>
           </div>
-          <div className="rounded-2xl bg-black/35 px-5 py-3 backdrop-blur">
-            <div className="label !text-white/70">Floor price</div>
+          <div className="rounded-2xl border border-edge bg-raise px-5 py-3">
+            <div className="label">Floor price</div>
             <div className="font-display text-3xl font-bold text-white">{s ? (s.floor ? usd(s.floor) : "—") : "…"}</div>
           </div>
         </div>
@@ -110,7 +109,6 @@ export default function MarketplacePage() {
         </div>
         {data && listings.length === 0 && (
           <div className="card flex flex-col items-center gap-2 py-10 text-center text-sm text-slate-400">
-            <div className="text-4xl" aria-hidden>🎟️</div>
             <p className="font-semibold text-slate-200">No tickets listed yet</p>
             <p>Own a ticket? <Link href="/tickets" className="text-brand underline underline-offset-2">List it from My tickets</Link>.</p>
           </div>

@@ -47,16 +47,11 @@ export default function BuyPage() {
   return (
     <div className="space-y-8">
       {/* Hero */}
-      <section className="poster relative overflow-hidden rounded-3xl p-6 sm:p-10">
-        <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
-        <div className="relative flex min-h-[260px] flex-col justify-end sm:min-h-[320px]">
+      <section className="poster rounded-3xl p-6 sm:p-10">
+        <div className="flex min-h-[220px] flex-col justify-end sm:min-h-[280px]">
           <span className="chip w-fit">{EVENT.category}</span>
           <h1 className="mt-3 font-display text-4xl font-bold leading-[1.05] tracking-tight text-white sm:text-6xl">{config.eventName}</h1>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <span className="chip">📅 {EVENT.date}</span>
-            <span className="chip">🕒 {EVENT.doors}</span>
-            <span className="chip">📍 {EVENT.venue}</span>
-          </div>
+          <p className="mt-4 text-sm text-slate-400">{EVENT.date} · {EVENT.doors} · {EVENT.venue}</p>
         </div>
       </section>
 
@@ -69,10 +64,10 @@ export default function BuyPage() {
               Tickets can only change hands through the official resale market, where the artist is paid on every resale.
             </p>
             <ul className="mt-4 grid gap-3 sm:grid-cols-2">
-              <Perk icon="🛡️" t="No fake tickets" d="Each ticket is verified on a public blockchain." />
-              <Perk icon="🎤" t="Artists get paid on resale" d={`${config.royaltyBps / 100}% of every resale goes to the artist.`} />
-              <Perk icon="⚡" t="Organizer paid instantly" d={`${usd(config.organizerShare)} per ticket, at the moment of sale.`} />
-              <Perk icon="💳" t="Pay by card" d="No wallet, no crypto knowledge needed." />
+              <Perk t="No fake tickets" d="Each ticket is verified on a public blockchain." />
+              <Perk t="Artists get paid on resale" d={`${config.royaltyBps / 100}% of every resale goes to the artist.`} />
+              <Perk t="Organizer paid instantly" d={`${usd(config.organizerShare)} per ticket, at the moment of sale.`} />
+              <Perk t="Pay by card" d="No wallet, no crypto knowledge needed." />
             </ul>
           </section>
 
@@ -81,7 +76,7 @@ export default function BuyPage() {
             <ol className="mt-4 grid gap-4 sm:grid-cols-3">
               {steps.map((s) => (
                 <li key={s.n} className="rounded-xl border border-edge bg-raise p-4">
-                  <span className="grid h-7 w-7 place-items-center rounded-full text-sm font-bold text-white" style={{ backgroundImage: "linear-gradient(135deg,#ff3d7f,#ff8a3d)" }}>{s.n}</span>
+                  <span className="grid h-7 w-7 place-items-center rounded-full bg-white text-sm font-bold text-ink">{s.n}</span>
                   <div className="mt-3 font-semibold">{s.t}</div>
                   <p className="mt-1 text-sm text-slate-400">{s.d}</p>
                 </li>
@@ -98,7 +93,7 @@ export default function BuyPage() {
               <span className="label">1 per order</span>
             </div>
 
-            <div className="rounded-xl border-2 border-brand/70 bg-brand/5 p-4">
+            <div className="rounded-xl border border-white/70 bg-white/[0.03] p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="font-semibold">{EVENT.tier}</div>
@@ -117,7 +112,7 @@ export default function BuyPage() {
                   <span className="text-slate-500">{data ? `${sold}/${max} sold` : ""}</span>
                 </div>
                 <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/10" role="progressbar" aria-valuenow={Math.round(pctSold)} aria-valuemin={0} aria-valuemax={100} aria-label="Tickets sold">
-                  <div className="h-full rounded-full transition-all" style={{ width: `${pctSold}%`, backgroundImage: "linear-gradient(90deg,#ff3d7f,#ff8a3d)" }} />
+                  <div className="h-full rounded-full bg-white transition-all" style={{ width: `${pctSold}%` }} />
                 </div>
               </div>
             </div>
@@ -137,7 +132,7 @@ export default function BuyPage() {
             <button className="btn hidden w-full lg:inline-flex" disabled={busy || soldOut} onClick={pay}>{cta}</button>
 
             <p className="text-center text-xs text-slate-500">
-              🔒 Secure card checkout by Stripe
+              Secure card checkout by Stripe
             </p>
             <div className={`rounded-lg px-3 py-2 text-xs ${stripe ? "bg-amber-500/10 text-amber-200" : "bg-white/5 text-slate-400"}`}>
               {stripe
@@ -155,9 +150,9 @@ export default function BuyPage() {
 
             {lastTx && (
               <div className="rise rounded-xl border border-mint/40 bg-mint/10 p-3 text-sm">
-                <div className="font-semibold text-mint">🎉 You&apos;re in!</div>
+                <div className="font-semibold text-mint">You&apos;re in!</div>
                 <div className="mt-1 text-xs text-slate-300">Receipt <TxHash hash={lastTx} /></div>
-                <Link href={`/tickets?wallet=${wallet}`} className="mt-2 inline-block text-xs font-semibold text-brand underline underline-offset-2">View my tickets →</Link>
+                <Link href={`/tickets?wallet=${wallet}`} className="mt-2 inline-block text-xs font-semibold text-white underline underline-offset-2">View my tickets →</Link>
               </div>
             )}
           </div>
@@ -178,10 +173,9 @@ export default function BuyPage() {
   );
 }
 
-function Perk({ icon, t, d }: { icon: string; t: string; d: string }) {
+function Perk({ t, d }: { t: string; d: string }) {
   return (
-    <li className="flex gap-3 rounded-xl border border-edge bg-raise p-3">
-      <span className="text-xl" aria-hidden>{icon}</span>
+    <li className="rounded-xl border border-edge bg-raise p-3">
       <div>
         <div className="text-sm font-semibold">{t}</div>
         <div className="text-xs text-slate-400">{d}</div>

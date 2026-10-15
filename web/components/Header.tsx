@@ -19,7 +19,7 @@ export function Header() {
     <header className="sticky top-0 z-40 border-b border-edge bg-ink/85 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
         <Link href="/" className="flex items-center gap-2 font-display text-xl font-bold tracking-tight">
-          <span className="grid h-8 w-8 place-items-center rounded-lg text-base text-white" style={{ backgroundImage: "linear-gradient(135deg,#ff3d7f,#ff8a3d)" }}>◆</span>
+          <span className="grid h-7 w-7 place-items-center rounded-md bg-white text-sm text-ink">◆</span>
           FairTix
         </Link>
         <nav className="ml-2 hidden gap-1 md:flex" aria-label="Main">
@@ -38,8 +38,7 @@ export function Header() {
             {(["alice", "bob"] as WalletName[]).map((w) => (
               <button key={w} onClick={() => setWallet(w)} aria-pressed={wallet === w}
                 className={`flex items-center gap-2 rounded-full py-1 pl-1 pr-3 capitalize transition ${wallet === w ? "bg-white/10 text-white" : "text-slate-400 hover:text-white"}`}>
-                <span className={`grid h-6 w-6 place-items-center rounded-full text-xs font-bold ${wallet === w ? "text-white" : "bg-white/10 text-slate-300"}`}
-                  style={wallet === w ? { backgroundImage: "linear-gradient(135deg,#ff3d7f,#8b6cff)" } : undefined}>
+                <span className={`grid h-6 w-6 place-items-center rounded-full text-xs font-bold ${wallet === w ? "bg-white text-ink" : "bg-white/10 text-slate-300"}`}>
                   {w[0].toUpperCase()}
                 </span>
                 {w}
