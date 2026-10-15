@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { postJson, useChainState, useToast, useWallet } from "@/components/Providers";
 import { Badge, TicketCard } from "@/components/TicketCard";
+import { EntryQr } from "@/components/EntryQr";
 import { CAP_BPS, FEE_BPS, ROYALTY_BPS, parseUsd, splitResale, usd } from "@/lib/format";
 import config from "../../../shared/config.json";
 import type { Listing } from "@/lib/types";
@@ -81,7 +82,7 @@ export default function TicketsPage() {
         )}
         <div className="grid gap-5 md:grid-cols-2">
           {data?.tickets.map((t) => (
-            <OwnedTicket key={t.tokenId} tokenId={t.tokenId} busy={busy === `list${t.tokenId}`}
+            <OwnedTicket key={t.tokenId} tokenId={t.tokenId} used={t.used} wallet={wallet} busy={busy === `list${t.tokenId}`}
               onSubmit={(price) => act(`list${t.tokenId}`, "/api/resale/list", { wallet, tokenId: t.tokenId, price: price.toString() }, `Ticket #${t.tokenId} listed for ${usd(price)}`)} />
           ))}
           {data?.myListings.map((l) => (
@@ -128,8 +129,9 @@ export default function TicketsPage() {
   );
 }
 
-function OwnedTicket({ tokenId, busy, onSubmit }: { tokenId: string; busy: boolean; onSubmit: (price: bigint) => void }) {
+function OwnedTicket({ tokenId, used, wallet, busy, onSubmit }: { tokenId: string; used: boolean; wallet: string; busy: boolean; onSubmit: (price: bigint) => void }) {
   const [open, setOpen] = useState(false);
+  const [showQr, setShowQr] = useState(false);
   const [txt, setTxt] = useState("60");
   const price = parseUsd(txt);
   const valid = price !== null && price > 0n;
@@ -138,7 +140,7 @@ function OwnedTicket({ tokenId, busy, onSubmit }: { tokenId: string; busy: boole
 
   return (
     <TicketCard tokenId={tokenId}
-      badge={<Badge tone="mint">Valid · ready to use</Badge>}
+      badge={used ? <Badge tone="amber">Checked in</Badge> : <Badge tone="mint">Valid · ready to use</Badge>}
       main={
         <div className="flex items-center justify-between gap-4">
           <div className="text-xs text-slate-400">{config.eventName}</div>
@@ -147,8 +149,12 @@ function OwnedTicket({ tokenId, busy, onSubmit }: { tokenId: string; busy: boole
       }
       stub={
         <div>
+          {showQr && <EntryQr tokenId={tokenId} wallet={wallet} onClose={() => setShowQr(false)} />}
           {!open ? (
-            <button className="btn-ghost w-full" onClick={() => setOpen(true)}>Can&apos;t go? Resell this ticket</button>
+            <div className="space-y-2">
+              <button className="btn w-full" onClick={() => setShowQr(true)}>{used ? "View entry pass" : "Show entry QR"}</button>
+              {!used && <button className="btn-ghost w-full" onClick={() => setOpen(true)}>Can&apos;t go? Resell this ticket</button>}
+            </div>
           ) : (
             <div className="space-y-3">
               <label className="label" htmlFor={`price${tokenId}`}>Resale price</label>

@@ -55,7 +55,7 @@ export async function GET(req: Request) {
       if (r[3]) listings.push({ id: String(ids[i]), seller: r[0], sellerName: nameOf(r[0]), tokenId: String(r[1]), price: String(r[2]), active: true });
     });
 
-    let tickets: { tokenId: string }[] = [];
+    let tickets: { tokenId: string; used: boolean }[] = [];
     let walletInfo: StateResponse["wallet"] = null;
     if (me) {
       const owners = await Promise.all(
@@ -67,8 +67,11 @@ export async function GET(req: Request) {
       );
       tickets = owners
         .filter((x) => x.o.toLowerCase() === me.address.toLowerCase())
-        .map((x) => ({ tokenId: x.id }))
+        .map((x) => ({ tokenId: x.id, used: false }))
         .sort((a, b) => Number(a.tokenId) - Number(b.tokenId));
+      await Promise.all(tickets.map(async (t) => {
+        t.used = await read<boolean>(addr.checkIn, abis.checkIn, "used", [BigInt(t.tokenId)]).catch(() => false);
+      }));
       walletInfo = { name: me.name, address: me.address as Address, usdc: String(await bal(me.address)) };
     }
 

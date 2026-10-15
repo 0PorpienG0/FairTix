@@ -11,6 +11,7 @@ const links = [
   { href: "/marketplace", label: "Resale market" },
   { href: "/tickets", label: "My tickets" },
   { href: "/organizer", label: "Organizer" },
+  { href: "/scan", label: "Gate scan" },
 ];
 
 export function Header() {

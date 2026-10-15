@@ -6,7 +6,7 @@ export interface ResaleEvent { listingId: string; buyer: string; tokenId: string
 
 export interface StateResponse {
   wallet: { name: string; address: string; usdc: string } | null;
-  tickets: { tokenId: string }[];
+  tickets: { tokenId: string; used: boolean }[];
   listings: Listing[];
   myListings: Listing[];
   balances: { organizer: string; platform: string; artist: string };

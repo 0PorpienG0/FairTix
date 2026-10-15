@@ -9,8 +9,11 @@ export async function POST(req: Request) {
     const { wallet, tokenId, price } = (await req.json()) as { wallet?: string; tokenId: string | number; price: string | number };
     const w = await identify(wallet);
     if (!w) return NextResponse.json({ ok: false, error: "Please sign in" }, { status: 401 });
-    await ensureGas(w.address);
     const id = BigInt(tokenId);
+    if (await read<boolean>(addr.checkIn, abis.checkIn, "used", [id])) {
+      return NextResponse.json({ ok: false, error: "This ticket was already used at the gate and can't be resold" }, { status: 400 });
+    }
+    await ensureGas(w.address);
     const wc = walletFor(w.name);
     const hashes: string[] = [];
 

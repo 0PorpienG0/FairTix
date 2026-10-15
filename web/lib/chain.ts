@@ -11,6 +11,7 @@ import usdcAbi from "../../shared/abi/MockUSDC.json";
 import ticketAbi from "../../shared/abi/TicketNFT.json";
 import primaryAbi from "../../shared/abi/PrimarySale.json";
 import marketAbi from "../../shared/abi/Marketplace.json";
+import checkInAbi from "../../shared/abi/CheckIn.json";
 
 export { config };
 export const dep = deployment as typeof deployment;
@@ -19,12 +20,14 @@ export const abis = {
   ticket: ticketAbi as Abi,
   primary: primaryAbi as Abi,
   market: marketAbi as Abi,
+  checkIn: checkInAbi as Abi,
 };
 export const addr = {
   usdc: dep.usdc as Address,
   ticket: dep.ticket as Address,
   primary: dep.primarySale as Address,
   market: dep.marketplace as Address,
+  checkIn: dep.checkIn as Address,
 };
 
 const rpcUrl = process.env.RPC_URL || dep.rpcUrl;
