@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { Address } from "viem";
-import { abis, addr, config, dep, friendlyError, maxPriceMicro, nameOf, publicClient, read, resolveWallet } from "@/lib/chain";
+import { abis, addr, getEvents, config, dep, friendlyError, maxPriceMicro, nameOf, publicClient, read, resolveWallet } from "@/lib/chain";
 import type { Listing, ResaleEvent, SaleEvent, StateResponse } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -21,8 +21,8 @@ export async function GET(req: Request) {
       read<bigint>(addr.primary, abis.primary, "sold"),
       read<bigint>(addr.market, abis.market, "nextListingId"),
       publicClient.getBlockNumber(),
-      publicClient.getContractEvents({ address: addr.primary, abi: abis.primary, eventName: "TicketSold", fromBlock: 0n }),
-      publicClient.getContractEvents({ address: addr.market, abi: abis.market, eventName: "Sold", fromBlock: 0n }),
+      getEvents(addr.primary, abis.primary, "TicketSold"),
+      getEvents(addr.market, abis.market, "Sold"),
     ]);
 
     const sales: SaleEvent[] = saleLogs

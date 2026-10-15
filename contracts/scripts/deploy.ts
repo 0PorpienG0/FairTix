@@ -21,8 +21,10 @@ async function main() {
   const isLocal = network.name === "localhost" || network.name === "hardhat" || chainId === 31337;
 
   const [deployer] = await ethers.getSigners();
+  const deployBlock = await ethers.provider.getBlockNumber();
   let accounts: Record<string, string>;
   let signers: Record<string, any> = {};
+  let testnetKeys: Record<string, { address: string; privateKey: string }> = {};
 
   if (isLocal) {
     const all = await ethers.getSigners();
@@ -33,17 +35,24 @@ async function main() {
       signers[n] = all[i];
     });
   } else {
-    // Testnet: deployer is also organizer/platform/artist/treasury unless overridden by env.
-    const d = deployer.address;
-    accounts = {
-      deployer: d,
-      organizer: process.env.ORGANIZER_ADDRESS || d,
-      platform: process.env.PLATFORM_ADDRESS || d,
-      artist: process.env.ARTIST_ADDRESS || d,
-      treasury: process.env.TREASURY_ADDRESS || d,
-      alice: process.env.ALICE_ADDRESS || d,
-      bob: process.env.BOB_ADDRESS || d,
-    };
+    // Testnet: reuse shared/testnet-keys.json if present (gitignored), else generate fresh throwaway wallets per role.
+    const keyFile = path.join(SHARED, "testnet-keys.json");
+    if (fs.existsSync(keyFile)) {
+      testnetKeys = JSON.parse(fs.readFileSync(keyFile, "utf8"));
+    } else {
+      testnetKeys = {};
+      for (const n of ["organizer", "platform", "artist", "treasury", "alice", "bob"]) {
+        const w = ethers.Wallet.createRandom();
+        testnetKeys[n] = { address: w.address, privateKey: w.privateKey };
+      }
+      fs.writeFileSync(keyFile, JSON.stringify(testnetKeys, null, 2) + "\n");
+      console.log("Generated throwaway testnet wallets -> shared/testnet-keys.json (gitignored, never commit)");
+    }
+    accounts = { deployer: deployer.address };
+    for (const [n, k] of Object.entries(testnetKeys)) {
+      accounts[n] = k.address;
+      signers[n] = new ethers.Wallet(k.privateKey, ethers.provider);
+    }
   }
   console.log(`Network ${network.name} chainId ${chainId}, deployer ${deployer.address}`);
 
@@ -71,7 +80,7 @@ async function main() {
 
   const market = await (await ethers.getContractFactory("Marketplace")).deploy(
     usdcAddr, ticketAddr, accounts.artist, accounts.platform,
-    cfg.faceValue, cfg.resaleCapBps, cfg.royaltyFlat, cfg.resaleFeeFlat);
+    cfg.faceValue, cfg.resaleCapBps, cfg.royaltyBps, cfg.resaleFeeBps);
   await market.waitForDeployment();
   const marketAddr = await market.getAddress();
 
@@ -84,21 +93,22 @@ async function main() {
   if (mockUsdc) {
     const m = (n: number) => BigInt(n) * 1_000_000n;
     await (await usdc.mint(accounts.treasury, m(100000))).wait();
-    if (isLocal) {
-      await (await usdc.mint(accounts.alice, m(1000))).wait();
-      await (await usdc.mint(accounts.bob, m(1000))).wait();
+    await (await usdc.mint(accounts.alice, m(1000))).wait();
+    await (await usdc.mint(accounts.bob, m(1000))).wait();
+  }
+  if (!isLocal) {
+    // Wallets that sign txs server-side need a little ETH for gas.
+    const gas = ethers.parseEther(process.env.GAS_FUND_ETH || "0.002");
+    for (const n of ["treasury", "alice", "bob"]) {
+      await (await deployer.sendTransaction({ to: accounts[n], value: gas })).wait();
     }
   }
-  if (isLocal) {
-    await (await usdc.connect(signers.treasury).approve(saleAddr, ethers.MaxUint256)).wait();
-  } else if (accounts.treasury === deployer.address) {
-    await (await usdc.approve(saleAddr, ethers.MaxUint256)).wait();
-  }
+  await (await usdc.connect(signers.treasury).approve(saleAddr, ethers.MaxUint256)).wait();
 
   const rpcUrl = isLocal ? "http://127.0.0.1:8545" : (process.env.BASE_SEPOLIA_RPC || "https://sepolia.base.org");
   const { deployer: _omit, ...publicAccounts } = accounts;
   const deployment = {
-    chainId, rpcUrl,
+    chainId, rpcUrl, deployBlock: deployBlock.toString(),
     usdc: usdcAddr, ticket: ticketAddr, primarySale: saleAddr, marketplace: marketAddr,
     accounts: publicAccounts,
   };
