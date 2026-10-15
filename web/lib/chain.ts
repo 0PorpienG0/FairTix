@@ -167,7 +167,10 @@ export async function getEvents(address: Address, abi: Abi, eventName: string): 
     seen.add(id);
     return true;
   });
+  // Public RPCs sit behind load balancers whose nodes lag each other, so keep a 15-block overlap:
+  // the next call refetches the tail (deduped above) and cannot miss logs a lagging node hadn't seen yet.
+  const cursor = head > c.to + 15n ? head - 15n : c.to;
   const cur = logCache.get(key);
-  if (!cur || cur.to < head) logCache.set(key, { to: head, logs }); // never move the cursor backwards
+  if (!cur || cur.to < cursor) logCache.set(key, { to: cursor, logs }); // never move the cursor backwards
   return logs as never;
 }
