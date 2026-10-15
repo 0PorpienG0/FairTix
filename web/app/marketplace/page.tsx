@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { postJson, TxHash, useToast, useWallet } from "@/components/Providers";
+import { Badge, TicketCard } from "@/components/TicketCard";
 import { splitResale, usd } from "@/lib/format";
 import type { Listing, MarketplaceResponse } from "@/lib/types";
 
@@ -68,47 +69,62 @@ export default function MarketplacePage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <h1 className="text-2xl font-extrabold">Marketplace</h1>
-          <p className="text-sm text-slate-400">Resale tickets for {data?.eventName ?? "…"} · open pricing, artist and platform paid automatically · acting as <span className="capitalize text-slate-200">{wallet}</span></p>
+      <section className="poster relative overflow-hidden rounded-3xl p-6 sm:p-8">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/55 to-black/10" />
+        <div className="relative flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <span className="chip">Official resale</span>
+            <h1 className="mt-3 font-display text-3xl font-bold text-white sm:text-4xl">Resale market</h1>
+            <p className="mt-1 max-w-xl text-sm text-white/85">
+              Verified tickets from real fans for {data?.eventName ?? "…"}. The artist and platform are paid automatically on every sale.
+              You&apos;re buying as <span className="font-semibold capitalize">{wallet}</span>.
+            </p>
+          </div>
+          <div className="rounded-2xl bg-black/35 px-5 py-3 backdrop-blur">
+            <div className="label !text-white/70">Floor price</div>
+            <div className="font-display text-3xl font-bold text-white">{s ? (s.floor ? usd(s.floor) : "—") : "…"}</div>
+          </div>
         </div>
-        <label className="flex items-center gap-2 text-sm text-slate-400">
-          Sort
-          <select className="input !w-auto !py-1.5" value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
-            <option value="low">Price: low to high</option>
-            <option value="high">Price: high to low</option>
-            <option value="new">Newest</option>
-          </select>
-        </label>
-      </div>
-      {error && <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300">{error}</div>}
+      </section>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-        <Stat k="Active listings" v={s ? String(s.activeCount) : "…"} />
-        <Stat k="Fees" v={data ? `${data.royaltyBps / 100}% artist + ${data.feeBps / 100}% platform` : "…"} small />
-        <Stat k="Floor price" v={s ? (s.floor ? usd(s.floor) : "—") : "…"} />
+      {error && <div role="alert" className="rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300">{error}</div>}
+
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <Stat k="Listed now" v={s ? String(s.activeCount) : "…"} />
         <Stat k="Resales completed" v={s ? String(s.totalResales) : "…"} />
         <Stat k="Total volume" v={s ? usd(s.totalVolume) : "…"} />
+        <Stat k="Resale fees" v={data ? `${data.royaltyBps / 100}% artist · ${data.feeBps / 100}% platform` : "…"} small />
       </div>
 
       <section>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-display text-xl font-bold">Tickets for sale</h2>
+          <label className="flex items-center gap-2 text-sm text-slate-400">
+            Sort by
+            <select className="input !w-auto !py-1.5" value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
+              <option value="low">Price: low to high</option>
+              <option value="high">Price: high to low</option>
+              <option value="new">Newest</option>
+            </select>
+          </label>
+        </div>
         {data && listings.length === 0 && (
-          <div className="card text-center text-sm text-slate-400">
+          <div className="card flex flex-col items-center gap-2 py-10 text-center text-sm text-slate-400">
+            <div className="text-4xl" aria-hidden>🎟️</div>
             <p className="font-semibold text-slate-200">No tickets listed yet</p>
-            <p className="mt-1">Own a ticket? <Link href="/tickets" className="text-brand underline underline-offset-2">List it from My tickets</Link>.</p>
+            <p>Own a ticket? <Link href="/tickets" className="text-brand underline underline-offset-2">List it from My tickets</Link>.</p>
           </div>
         )}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {data && listings.map((l) => (
-            <TicketCard key={l.id} l={l} data={data} mine={!!me && l.seller.toLowerCase() === me}
+            <ListingCard key={l.id} l={l} data={data} mine={!!me && l.seller.toLowerCase() === me}
               busy={busy} wallet={wallet} act={act} />
           ))}
         </div>
       </section>
 
       <section>
-        <h2 className="mb-3 text-lg font-bold">Recent resales</h2>
+        <h2 className="mb-3 font-display text-xl font-bold">Recent resales</h2>
         {data && data.resales.length === 0 && <div className="card text-sm text-slate-400">No resales completed yet.</div>}
         <div className="space-y-2">
           {data?.resales.slice(0, 20).map((r) => (
@@ -132,12 +148,12 @@ function Stat({ k, v, small }: { k: string; v: string; small?: boolean }) {
   return (
     <div className="card !py-3">
       <div className="label">{k}</div>
-      <div className={`mt-1 font-mono font-bold ${small ? "text-sm leading-7" : "text-xl"}`}>{v}</div>
+      <div className={`mt-1 font-display font-bold ${small ? "text-sm leading-7" : "text-2xl"}`}>{v}</div>
     </div>
   );
 }
 
-function TicketCard({ l, data, mine, busy, wallet, act }: {
+function ListingCard({ l, data, mine, busy, wallet, act }: {
   l: Listing; data: MarketplaceResponse; mine: boolean; busy: string | null; wallet: string;
   act: (key: string, url: string, body: unknown, okTitle: string) => void;
 }) {
@@ -147,36 +163,32 @@ function TicketCard({ l, data, mine, busy, wallet, act }: {
   const atCap = data.capBps > 0 && price === (BigInt(data.faceValue) * BigInt(data.capBps)) / 10000n;
   const { royalty, fee, seller: receive } = splitResale(price, BigInt(data.royaltyBps), BigInt(data.feeBps));
   return (
-    <div className={`card ${mine ? "border-brand/40" : ""}`}>
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <div className="text-xs text-slate-400">{data.eventName}</div>
-          <div className="text-lg font-bold">Ticket #{l.tokenId}</div>
-        </div>
-        <div className="text-right font-mono text-xl">{usd(l.price)}</div>
-      </div>
-      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-        <span className="text-slate-400">Seller <span className="capitalize text-slate-200">{l.sellerName ?? l.seller.slice(0, 8)}</span></span>
-        <span className={`rounded-full px-2 py-0.5 ${above ? "bg-amber-500/15 text-amber-200" : "bg-white/10 text-slate-300"}`}>{pct.toFixed(0)}% of face value{above ? " · above face value" : ""}</span>
-        {atCap && <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-amber-300">at cap</span>}
-      </div>
-      <p className="mt-2 text-xs text-slate-400">
-        {usd(royalty)} ({data.royaltyBps / 100}%) → artist · {usd(fee)} ({data.feeBps / 100}%) → platform · seller receives <b className="text-mint">{usd(receive)}</b>
-      </p>
-      {mine ? (
-        <div className="mt-3 flex items-center gap-2">
-          <span className="rounded-full bg-brand/20 px-3 py-1.5 text-xs text-brand">Your listing</span>
-          <button className="btn-ghost ml-auto" disabled={busy === `c${l.id}`}
-            onClick={() => act(`c${l.id}`, "/api/resale/cancel", { wallet, listingId: l.id }, `Listing #${l.id} cancelled, ticket returned`)}>
-            {busy === `c${l.id}` ? "Cancelling…" : "Cancel"}
+    <TicketCard tokenId={l.tokenId} tone={mine ? "listed" : "default"}
+      badge={<>
+        <Badge>Seller: <span className="capitalize">{l.sellerName ?? l.seller.slice(0, 8)}</span></Badge>
+        <Badge tone={above ? "amber" : "gray"}>{pct.toFixed(0)}% of face value</Badge>
+        {atCap && <Badge tone="amber">At cap</Badge>}
+        {mine && <Badge tone="brand">Your listing</Badge>}
+      </>}
+      main={<p className="text-xs leading-relaxed text-slate-400">
+        {usd(royalty)} ({data.royaltyBps / 100}%) to the artist · {usd(fee)} ({data.feeBps / 100}%) to the platform · seller receives <b className="text-mint">{usd(receive)}</b>
+      </p>}
+      stub={mine ? (
+        <button className="btn-ghost w-full" disabled={busy === `c${l.id}`}
+          onClick={() => act(`c${l.id}`, "/api/resale/cancel", { wallet, listingId: l.id }, `Listing #${l.id} cancelled, ticket returned`)}>
+          {busy === `c${l.id}` ? "Cancelling…" : "Cancel my listing"}
+        </button>
+      ) : (
+        <div className="flex items-center gap-3">
+          <div>
+            <div className="label">Price</div>
+            <div className="font-display text-2xl font-bold leading-tight">{usd(l.price)}</div>
+          </div>
+          <button className="btn ml-auto" disabled={busy === `b${l.id}`}
+            onClick={() => act(`b${l.id}`, "/api/resale/buy", { wallet, listingId: l.id }, `Bought ticket #${l.tokenId} for ${usd(l.price)}`)}>
+            {busy === `b${l.id}` ? "Buying…" : "Buy ticket"}
           </button>
         </div>
-      ) : (
-        <button className="btn mt-3 w-full" disabled={busy === `b${l.id}`}
-          onClick={() => act(`b${l.id}`, "/api/resale/buy", { wallet, listingId: l.id }, `Bought ticket #${l.tokenId} for ${usd(l.price)}`)}>
-          {busy === `b${l.id}` ? "Buying…" : `Buy as ${wallet} · ${usd(l.price)}`}
-        </button>
-      )}
-    </div>
+      )} />
   );
 }

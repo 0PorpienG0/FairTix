@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import { postJson, useChainState, useToast, useWallet } from "@/components/Providers";
+import { Badge, TicketCard } from "@/components/TicketCard";
 import { CAP_BPS, FEE_BPS, ROYALTY_BPS, parseUsd, splitResale, usd } from "@/lib/format";
 import config from "../../../shared/config.json";
 import type { Listing } from "@/lib/types";
@@ -27,66 +29,96 @@ export default function TicketsPage() {
   }
 
   const buyable = (data?.listings ?? []) as Listing[];
+  const owned = data?.tickets.length ?? 0;
+  const listed = data?.myListings.length ?? 0;
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <h1 className="text-2xl font-extrabold capitalize">{wallet}&apos;s tickets</h1>
-          <p className="font-mono text-xs text-slate-500">{data?.wallet?.address}</p>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <span className="grid h-14 w-14 place-items-center rounded-full font-display text-2xl font-bold text-white" style={{ backgroundImage: "linear-gradient(135deg,#ff3d7f,#8b6cff)" }}>
+            {wallet[0].toUpperCase()}
+          </span>
+          <div>
+            <h1 className="font-display text-2xl font-bold capitalize sm:text-3xl">{wallet}&apos;s tickets</h1>
+            <p className="font-mono text-xs text-slate-500">{data?.wallet?.address ?? "…"}</p>
+          </div>
         </div>
-        <div className="card !py-2 text-sm">USDC balance <b className="ml-2 font-mono text-mint">{data?.wallet ? usd(data.wallet.usdc) : "…"}</b></div>
+        <div className="card flex items-center gap-4 !py-3">
+          <div>
+            <div className="label">Test USDC balance</div>
+            <div className="font-display text-xl font-bold text-mint">{data?.wallet ? usd(data.wallet.usdc) : "…"}</div>
+          </div>
+          <div className="h-8 w-px bg-edge" />
+          <div>
+            <div className="label">Tickets</div>
+            <div className="font-display text-xl font-bold">{data ? owned + listed : "…"}</div>
+          </div>
+        </div>
       </div>
-      {error && <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300">{error}</div>}
+      {error && <div role="alert" className="rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300">{error}</div>}
 
       <section>
-        <h2 className="mb-3 text-lg font-bold">Owned tickets</h2>
-        {data && data.tickets.length === 0 && data.myListings.length === 0 && (
-          <div className="card text-sm text-slate-400">No tickets yet. Buy one on the home page.</div>
+        <h2 className="mb-3 font-display text-xl font-bold">Your tickets</h2>
+        {data && owned === 0 && listed === 0 && (
+          <div className="card flex flex-col items-center gap-3 py-10 text-center">
+            <div className="text-4xl" aria-hidden>🎟️</div>
+            <div className="font-semibold">No tickets yet</div>
+            <p className="max-w-sm text-sm text-slate-400">Grab a ticket for {config.eventName} and it will show up here.</p>
+            <Link href="/#booking" className="btn mt-1">Get tickets</Link>
+          </div>
         )}
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-5 md:grid-cols-2">
           {data?.tickets.map((t) => (
-            <ListForm key={t.tokenId} tokenId={t.tokenId} busy={busy === `list${t.tokenId}`}
+            <OwnedTicket key={t.tokenId} tokenId={t.tokenId} busy={busy === `list${t.tokenId}`}
               onSubmit={(price) => act(`list${t.tokenId}`, "/api/resale/list", { wallet, tokenId: t.tokenId, price: price.toString() }, `Ticket #${t.tokenId} listed for ${usd(price)}`)} />
           ))}
           {data?.myListings.map((l) => (
-            <div key={l.id} className="card border-brand/40">
-              <div className="flex items-center justify-between">
-                <div className="font-bold">Ticket #{l.tokenId}</div>
-                <span className="rounded-full bg-brand/20 px-2 py-0.5 text-xs text-brand">Listed · {usd(l.price)}</span>
-              </div>
-              <p className="mt-2 text-xs text-slate-400">Escrowed in the marketplace. You receive {usd(splitResale(BigInt(l.price)).seller)} when sold ({pctSeller}% of the price).</p>
-              <button className="btn-ghost mt-3" disabled={busy === `c${l.id}`} onClick={() => act(`c${l.id}`, "/api/resale/cancel", { wallet, listingId: l.id }, `Listing #${l.id} cancelled, ticket returned`)}>
-                {busy === `c${l.id}` ? "Cancelling…" : "Cancel listing"}
-              </button>
-            </div>
+            <TicketCard key={l.id} tokenId={l.tokenId} tone="listed"
+              badge={<><Badge tone="brand">Listed for resale</Badge><span className="font-display text-lg font-bold">{usd(l.price)}</span></>}
+              main={<p className="text-xs text-slate-400">Held safely in escrow. You receive <b className="text-mint">{usd(splitResale(BigInt(l.price)).seller)}</b> ({pctSeller}%) when it sells.</p>}
+              stub={
+                <button className="btn-ghost w-full" disabled={busy === `c${l.id}`}
+                  onClick={() => act(`c${l.id}`, "/api/resale/cancel", { wallet, listingId: l.id }, `Listing #${l.id} cancelled, ticket returned`)}>
+                  {busy === `c${l.id}` ? "Cancelling…" : "Cancel listing"}
+                </button>
+              } />
           ))}
         </div>
       </section>
 
       <section>
-        <h2 className="mb-3 text-lg font-bold">Marketplace · other users&apos; listings</h2>
+        <div className="mb-3 flex items-baseline justify-between">
+          <h2 className="font-display text-xl font-bold">Available from other fans</h2>
+          <Link href="/marketplace" className="text-sm font-medium text-brand hover:underline">See full market →</Link>
+        </div>
         {buyable.length === 0 && <div className="card text-sm text-slate-400">No listings from other users right now.</div>}
-        <div className="grid gap-4 md:grid-cols-2">
-          {buyable.map((l) => (
-            <div key={l.id} className="card">
-              <div className="flex items-center justify-between">
-                <div className="font-bold">Ticket #{l.tokenId}</div>
-                <div className="font-mono text-lg">{usd(l.price)}</div>
-              </div>
-              <p className="mt-1 text-xs text-slate-400">Seller: <span className="capitalize">{l.sellerName ?? l.seller}</span> · includes {usd(splitResale(BigInt(l.price)).royalty)} artist royalty ({pctRoy}%) + {usd(splitResale(BigInt(l.price)).fee)} platform fee ({pctFee}%)</p>
-              <button className="btn mt-3 w-full" disabled={busy === `b${l.id}`} onClick={() => act(`b${l.id}`, "/api/resale/buy", { wallet, listingId: l.id }, `Bought ticket #${l.tokenId} for ${usd(l.price)}`)}>
-                {busy === `b${l.id}` ? "Buying…" : `Buy as ${wallet} · ${usd(l.price)}`}
-              </button>
-            </div>
-          ))}
+        <div className="grid gap-5 md:grid-cols-2">
+          {buyable.map((l) => {
+            const sp = splitResale(BigInt(l.price));
+            return (
+              <TicketCard key={l.id} tokenId={l.tokenId}
+                badge={<><Badge>Seller: <span className="capitalize">{l.sellerName ?? l.seller.slice(0, 8)}</span></Badge></>}
+                main={<p className="text-xs text-slate-400">Includes {usd(sp.royalty)} artist royalty ({pctRoy}%) and {usd(sp.fee)} platform fee ({pctFee}%).</p>}
+                stub={
+                  <div className="flex items-center gap-3">
+                    <div className="font-display text-2xl font-bold">{usd(l.price)}</div>
+                    <button className="btn ml-auto" disabled={busy === `b${l.id}`}
+                      onClick={() => act(`b${l.id}`, "/api/resale/buy", { wallet, listingId: l.id }, `Bought ticket #${l.tokenId} for ${usd(l.price)}`)}>
+                      {busy === `b${l.id}` ? "Buying…" : "Buy"}
+                    </button>
+                  </div>
+                } />
+            );
+          })}
         </div>
       </section>
     </div>
   );
 }
 
-function ListForm({ tokenId, busy, onSubmit }: { tokenId: string; busy: boolean; onSubmit: (price: bigint) => void }) {
+function OwnedTicket({ tokenId, busy, onSubmit }: { tokenId: string; busy: boolean; onSubmit: (price: bigint) => void }) {
+  const [open, setOpen] = useState(false);
   const [txt, setTxt] = useState("60");
   const price = parseUsd(txt);
   const valid = price !== null && price > 0n;
@@ -94,29 +126,41 @@ function ListForm({ tokenId, busy, onSubmit }: { tokenId: string; busy: boolean;
   const sp = valid ? splitResale(price) : null;
 
   return (
-    <div className="card">
-      <div className="flex items-center justify-between">
-        <div className="font-bold">Ticket #{tokenId}</div>
-        <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs text-slate-300">Owned</span>
-      </div>
-      <h3 className="label mt-4">List for resale</h3>
-      <div className="mt-1 flex items-center gap-2">
-        <span className="text-slate-400">$</span>
-        <input className="input font-mono" inputMode="decimal" value={txt} onChange={(e) => setTxt(e.target.value)} />
-      </div>
-
-      <dl className="mt-3 space-y-1 rounded-lg bg-white/5 p-3 text-xs">
-        <Line k="Sale price" v={price !== null ? usd(price) : "—"} />
-        <Line k={`Artist royalty (${pctRoy}%)`} v={sp ? `-${usd(sp.royalty)}` : "—"} />
-        <Line k={`Platform fee (${pctFee}%)`} v={sp ? `-${usd(sp.fee)}` : "—"} />
-        <div className="border-t border-edge pt-1" />
-        <Line k={`You receive (${pctSeller}%)`} v={sp ? usd(sp.seller) : "—"} strong />
-      </dl>
-      {over && <p className="mt-2 text-xs text-amber-300">Above the resale cap of {usd(cap)}; the contract will reject this listing.</p>}
-      <button className="btn mt-3 w-full" disabled={busy || !valid} onClick={() => valid && onSubmit(price)}>
-        {busy ? "Submitting…" : "List for resale"}
-      </button>
-    </div>
+    <TicketCard tokenId={tokenId}
+      badge={<Badge tone="mint">Valid · ready to use</Badge>}
+      main={
+        <div className="flex items-center justify-between gap-4">
+          <div className="text-xs text-slate-400">Admit one<br />{config.eventName}</div>
+          <div className="barcode w-40" aria-hidden />
+        </div>
+      }
+      stub={
+        <div>
+          {!open ? (
+            <button className="btn-ghost w-full" onClick={() => setOpen(true)}>Can&apos;t go? Resell this ticket</button>
+          ) : (
+            <div className="space-y-3">
+              <label className="label" htmlFor={`price${tokenId}`}>Resale price</label>
+              <div className="flex items-center gap-2">
+                <span className="text-slate-400">$</span>
+                <input id={`price${tokenId}`} className="input font-mono" inputMode="decimal" value={txt} onChange={(e) => setTxt(e.target.value)} />
+              </div>
+              <dl className="space-y-1 rounded-lg bg-white/5 p-3 text-xs">
+                <Line k="Sale price" v={price !== null ? usd(price) : "—"} />
+                <Line k={`Artist royalty (${pctRoy}%)`} v={sp ? `-${usd(sp.royalty)}` : "—"} />
+                <Line k={`Platform fee (${pctFee}%)`} v={sp ? `-${usd(sp.fee)}` : "—"} />
+                <div className="border-t border-edge pt-1" />
+                <Line k={`You receive (${pctSeller}%)`} v={sp ? usd(sp.seller) : "—"} strong />
+              </dl>
+              {over && <p className="text-xs text-amber-300">Above the resale cap of {usd(cap)}; the contract will reject this listing.</p>}
+              <div className="flex gap-2">
+                <button className="btn-ghost" onClick={() => setOpen(false)}>Back</button>
+                <button className="btn flex-1" disabled={busy || !valid} onClick={() => valid && onSubmit(price)}>{busy ? "Submitting…" : "List for resale"}</button>
+              </div>
+            </div>
+          )}
+        </div>
+      } />
   );
 }
 
