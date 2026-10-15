@@ -31,3 +31,6 @@ body { @apply bg-ink text-slate-100 antialiased; }
 .cl-socialButtonsBlockButton { background-color: #fafafa !important; border: 1px solid #fafafa !important; }
 .cl-socialButtonsBlockButtonText { color: #09090b !important; font-weight: 600 !important; }
 .cl-socialButtonsBlockButton:hover { background-color: #e4e4e7 !important; }
+/* Clerk account menu and profile: derive light text on our dark panels */
+.cl-userButtonPopoverActionButton, .cl-userButtonPopoverActionButtonIcon { color: #e4e4e7 !important; }
+.cl-userButtonPopoverActionButton:hover { background-color: rgba(255, 255, 255, 0.08) !important; }
