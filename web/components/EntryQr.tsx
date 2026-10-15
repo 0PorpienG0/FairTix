@@ -5,12 +5,10 @@ import QRCode from "qrcode";
 import { EVENT } from "@/lib/event";
 import config from "../../shared/config.json";
 
-const WINDOW_MS = 30_000;
-
-/** Entry QR for one ticket. The server signs a fresh code every 30 seconds, so a screenshot stops working. */
+/** Entry QR for one ticket. A fresh code is fetched every 15 seconds and each expires 30 seconds after it was issued, so screenshots stop working. */
 export function EntryQr({ tokenId, wallet, onClose }: { tokenId: string; wallet: string; onClose: () => void }) {
   const [img, setImg] = useState<string | null>(null);
-  const [exp, setExp] = useState(0);
+  const [refreshAt, setRefreshAt] = useState(0);
   const [used, setUsed] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
@@ -28,9 +26,9 @@ export function EntryQr({ tokenId, wallet, onClose }: { tokenId: string; wallet:
         const url = await QRCode.toDataURL(j.code, { margin: 1, width: 480, errorCorrectionLevel: "M" });
         if (!alive) return;
         setImg(url);
-        setExp(j.expiresAt);
+        setRefreshAt(j.refreshAt);
         setErr(null);
-        timer = setTimeout(load, Math.max(j.expiresAt - Date.now() - 1500, 1500)); // refresh just before it expires
+        timer = setTimeout(load, Math.max(j.refreshAt - Date.now(), 1500));
       } catch (e) {
         if (alive) {
           setErr((e as Error).message);
@@ -49,7 +47,8 @@ export function EntryQr({ tokenId, wallet, onClose }: { tokenId: string; wallet:
     return () => { clearInterval(h); window.removeEventListener("keydown", esc); };
   }, [onClose]);
 
-  const left = Math.max(0, Math.min(1, (exp - now) / WINDOW_MS));
+  const secs = Math.max(0, Math.ceil((refreshAt - now) / 1000));
+  const left = Math.max(0, Math.min(1, (refreshAt - now) / 15_000));
 
   // Portal to <body>: the ticket card animates with a transform, which would otherwise trap a fixed overlay inside it.
   return createPortal(
@@ -80,11 +79,11 @@ export function EntryQr({ tokenId, wallet, onClose }: { tokenId: string; wallet:
 
         {!used && (
           <>
-            <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/10" role="progressbar" aria-label="Time until the code changes" aria-valuenow={Math.round(left * 100)} aria-valuemin={0} aria-valuemax={100}>
+            <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/10" role="progressbar" aria-label="Time until a new code" aria-valuenow={Math.round(left * 100)} aria-valuemin={0} aria-valuemax={100}>
               <div className="h-full rounded-full bg-brand" style={{ width: `${left * 100}%` }} />
             </div>
             <p className="mt-2 text-center text-xs text-slate-400">
-              This code changes every 30 seconds, so a screenshot won&apos;t work. Show it at the gate.
+              New code in {secs}s. Each code expires 30 seconds after it&apos;s made, so a screenshot won&apos;t work. Show it at the gate.
             </p>
             {err && img && <p className="mt-1 text-center text-xs text-amber-300">{err}</p>}
           </>
