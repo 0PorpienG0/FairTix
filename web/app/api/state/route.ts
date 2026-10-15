@@ -12,7 +12,7 @@ const argsOf = (l: unknown) => (l as { args: Args }).args;
 export async function GET(req: Request) {
   try {
     const me = await identify(new URL(req.url).searchParams.get("wallet"));
-    if (me) await ensureGas(me.address).catch(() => {}); // first sign-in: send a small gas drip so the user can transact
+    if (me) await ensureGas(me.address).catch((e) => console.error("gas drip failed:", (e as Error).message.slice(0, 200))); // first sign-in: send a small gas drip so the user can transact
     const bal = (a: string) => read<bigint>(addr.usdc, abis.usdc, "balanceOf", [a]);
 
     const [organizer, platform, artist, sold, nextId, block, saleLogs, resaleLogs] = await Promise.all([

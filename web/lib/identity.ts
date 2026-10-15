@@ -20,7 +20,7 @@ export async function identify(demoWallet?: string | null): Promise<Identity | n
   return w ? { name: w.name, address: w.address } : null;
 }
 
-const GAS_DRIP = parseEther(process.env.USER_GAS_ETH || "0.00005");
+const GAS_DRIP = parseEther(process.env.USER_GAS_ETH || "0.00001");
 const funded = new Set<string>();
 let queue: Promise<unknown> = Promise.resolve();
 
