@@ -34,6 +34,10 @@ export const chain = defineChain({
   rpcUrls: { default: { http: [rpcUrl] } },
 });
 export const publicClient = createPublicClient({ chain, transport: http(rpcUrl) });
+// Log queries use a separate endpoint: free private RPC tiers (e.g. Alchemy: 10-block eth_getLogs range) reject
+// the wide pages we scan with, so they default to the deployment's public RPC even when RPC_URL is a private one.
+const logRpcUrl = process.env.LOGS_RPC_URL || dep.rpcUrl;
+const logClient = createPublicClient({ chain, transport: http(logRpcUrl) });
 
 type KeyMap = Record<string, { address: string; privateKey: string }>;
 
@@ -148,14 +152,14 @@ export function friendlyError(e: unknown): { error: string; errorName?: string }
 const logCache = new Map<string, { to: bigint; logs: unknown[] }>();
 export async function getEvents(address: Address, abi: Abi, eventName: string): Promise<{ args: unknown; transactionHash: string; blockNumber: bigint }[]> {
   const key = `${address}:${eventName}`;
-  const head = await publicClient.getBlockNumber();
+  const head = await logClient.getBlockNumber();
   const c = logCache.get(key) ?? { to: deployBlock - 1n, logs: [] };
   const STEP = 190n;
   const ranges: [bigint, bigint][] = [];
   for (let f = c.to + 1n; f <= head; f += STEP) ranges.push([f, f + STEP - 1n > head ? head : f + STEP - 1n]);
   const pages: unknown[][] = [];
   for (let i = 0; i < ranges.length; i += 8) {
-    const batch = await Promise.all(ranges.slice(i, i + 8).map(([f, t]) => publicClient.getContractEvents({ address, abi, eventName, fromBlock: f, toBlock: t })));
+    const batch = await Promise.all(ranges.slice(i, i + 8).map(([f, t]) => logClient.getContractEvents({ address, abi, eventName, fromBlock: f, toBlock: t })));
     pages.push(...batch);
   }
   // Dedupe by (tx, logIndex): concurrent requests share this cache and can refetch the same range.
