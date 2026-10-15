@@ -3,16 +3,16 @@ import { ethers } from "hardhat";
 
 const U = (n: number) => BigInt(n) * 1_000_000n;
 
-async function setup(maxSupply = 100) {
+async function setup(maxSupply = 100, capBps = 0) {
   const [deployer, organizer, platform, artist, treasury, alice, bob] = await ethers.getSigners();
   const usdc = await (await ethers.getContractFactory("MockUSDC")).deploy();
   const ticket = await (await ethers.getContractFactory("TicketNFT")).deploy("Demo", "TIX", deployer.address);
   const sale = await (await ethers.getContractFactory("PrimarySale")).deploy(
     await usdc.getAddress(), await ticket.getAddress(), organizer.address, platform.address,
-    U(50), U(49), U(1), maxSupply, treasury.address);
+    U(50), 48_500_000n, 1_500_000n, maxSupply, treasury.address);
   const market = await (await ethers.getContractFactory("Marketplace")).deploy(
     await usdc.getAddress(), await ticket.getAddress(), artist.address, platform.address,
-    U(50), 12000, U(1), U(1));
+    U(50), capBps, 1000, 500);
   await ticket.grantRole(await ticket.MINTER_ROLE(), await sale.getAddress());
   await ticket.setMarketplace(await market.getAddress());
   await usdc.mint(treasury.address, U(100000));
@@ -23,13 +23,13 @@ async function setup(maxSupply = 100) {
 }
 
 describe("Ticketing", () => {
-  it("primary sale splits 49/1 and mints to buyer", async () => {
+  it("primary sale splits 48.5/1.5 and mints to buyer", async () => {
     const { sale, ticket, usdc, organizer, platform, treasury, alice } = await setup();
     await expect(sale.connect(treasury).buyFor(alice.address))
-      .to.emit(sale, "TicketSold").withArgs(alice.address, 1, U(49), U(1));
+      .to.emit(sale, "TicketSold").withArgs(alice.address, 1, 48_500_000n, 1_500_000n);
     expect(await ticket.ownerOf(1)).to.equal(alice.address);
-    expect(await usdc.balanceOf(organizer.address)).to.equal(U(49));
-    expect(await usdc.balanceOf(platform.address)).to.equal(U(1));
+    expect(await usdc.balanceOf(organizer.address)).to.equal(48_500_000n);
+    expect(await usdc.balanceOf(platform.address)).to.equal(1_500_000n);
     expect(await usdc.balanceOf(treasury.address)).to.equal(U(100000 - 50));
     expect(await sale.sold()).to.equal(1);
   });
@@ -65,8 +65,8 @@ describe("Ticketing", () => {
     expect(await ticket.ownerOf(1)).to.equal(alice.address);
   });
 
-  it("rejects listing above cap with PriceAboveCap, accepts exactly cap", async () => {
-    const { sale, ticket, market, treasury, alice } = await setup();
+  it("rejects listing above cap with PriceAboveCap, accepts exactly cap (capBps=12000)", async () => {
+    const { sale, ticket, market, treasury, alice } = await setup(100, 12000);
     await sale.connect(treasury).buyFor(alice.address);
     await ticket.connect(alice).approve(await market.getAddress(), 1);
     expect(await market.maxPrice()).to.equal(U(60));
@@ -76,33 +76,46 @@ describe("Ticketing", () => {
     expect(await ticket.ownerOf(1)).to.equal(await market.getAddress());
   });
 
-  it("rejects price below royalty+fee and non-owner listing", async () => {
+  it("rejects zero price and non-owner listing", async () => {
     const { sale, ticket, market, treasury, alice, bob } = await setup();
     await sale.connect(treasury).buyFor(alice.address);
     await ticket.connect(alice).approve(await market.getAddress(), 1);
-    await expect(market.connect(alice).list(1, U(1))).to.be.revertedWithCustomError(market, "PriceTooLow");
+    await expect(market.connect(alice).list(1, 0)).to.be.revertedWithCustomError(market, "PriceTooLow");
     await expect(market.connect(bob).list(1, U(10))).to.be.revertedWithCustomError(market, "NotOwner");
   });
 
-  it("atomic resale at 60 splits 58 seller / 1 artist / 1 platform and moves NFT", async () => {
+  async function resale(price: number, seller: bigint, royalty: bigint, fee: bigint) {
     const { sale, ticket, market, usdc, treasury, alice, bob, artist, platform } = await setup();
     await sale.connect(treasury).buyFor(alice.address);
     await ticket.connect(alice).approve(await market.getAddress(), 1);
-    await market.connect(alice).list(1, U(60));
-    await usdc.connect(bob).approve(await market.getAddress(), U(60));
+    expect(await market.maxPrice()).to.equal(0);
+    await market.connect(alice).list(1, U(price));
+    await usdc.mint(bob.address, U(price));
+    await usdc.connect(bob).approve(await market.getAddress(), U(price));
     const aliceBefore = await usdc.balanceOf(alice.address);
     const platBefore = await usdc.balanceOf(platform.address);
+    const bobBefore = await usdc.balanceOf(bob.address);
     await expect(market.connect(bob).buy(0))
-      .to.emit(market, "Sold").withArgs(0, bob.address, 1, U(60), U(1), U(1), U(58));
+      .to.emit(market, "Sold").withArgs(0, bob.address, 1, U(price), royalty, fee, seller);
     expect(await ticket.ownerOf(1)).to.equal(bob.address);
-    expect(await usdc.balanceOf(bob.address)).to.equal(U(940));
-    expect(await usdc.balanceOf(alice.address)).to.equal(aliceBefore + U(58));
-    expect(await usdc.balanceOf(artist.address)).to.equal(U(1));
-    expect(await usdc.balanceOf(platform.address)).to.equal(platBefore + U(1));
+    expect(await usdc.balanceOf(bob.address)).to.equal(bobBefore - U(price));
+    expect(await usdc.balanceOf(alice.address)).to.equal(aliceBefore + seller);
+    expect(await usdc.balanceOf(artist.address)).to.equal(royalty);
+    expect(await usdc.balanceOf(platform.address)).to.equal(platBefore + fee);
     expect(await usdc.balanceOf(await market.getAddress())).to.equal(0);
-    const l = await market.listings(0);
-    expect(l.active).to.equal(false);
+    expect((await market.listings(0)).active).to.equal(false);
     await expect(market.connect(bob).buy(0)).to.be.revertedWithCustomError(market, "NotActive");
+  }
+
+  it("uncapped resale at 60 -> 51 seller / 6 artist / 3 platform", () => resale(60, U(51), U(6), U(3)));
+  it("uncapped resale at 120 -> 102 / 12 / 6", () => resale(120, U(102), U(12), U(6)));
+  it("uncapped resale at 1000 works -> 850 / 100 / 50", () => resale(1000, U(850), U(100), U(50)));
+
+  it("constructor rejects royaltyBps+feeBps >= 10000", async () => {
+    const [d] = await ethers.getSigners();
+    const f = await ethers.getContractFactory("Marketplace");
+    await expect(f.deploy(d.address, d.address, d.address, d.address, U(50), 0, 9000, 1000))
+      .to.be.revertedWithCustomError(f, "BadBps");
   });
 
   it("buy is atomic: without USDC allowance nothing moves", async () => {

@@ -23,14 +23,15 @@ contract Marketplace is ReentrancyGuard, IERC721Receiver {
     address public immutable platform;
     uint256 public immutable faceValue;
     uint256 public immutable capBps;
-    uint256 public immutable royaltyFlat;
-    uint256 public immutable feeFlat;
+    uint256 public immutable royaltyBps;
+    uint256 public immutable feeBps;
 
     uint256 public nextListingId;
     mapping(uint256 => Listing) public listings;
 
     error PriceAboveCap(uint256 price, uint256 maxPrice);
     error PriceTooLow(uint256 price, uint256 minPrice);
+    error BadBps();
     error NotOwner();
     error NotSeller();
     error NotActive();
@@ -54,28 +55,31 @@ contract Marketplace is ReentrancyGuard, IERC721Receiver {
         address platform_,
         uint256 faceValue_,
         uint256 capBps_,
-        uint256 royaltyFlat_,
-        uint256 feeFlat_
+        uint256 royaltyBps_,
+        uint256 feeBps_
     ) {
+        if (royaltyBps_ + feeBps_ >= 10000) revert BadBps();
         usdc = usdc_;
         ticket = ticket_;
         artist = artist_;
         platform = platform_;
         faceValue = faceValue_;
         capBps = capBps_;
-        royaltyFlat = royaltyFlat_;
-        feeFlat = feeFlat_;
+        royaltyBps = royaltyBps_;
+        feeBps = feeBps_;
     }
 
     function maxPrice() public view returns (uint256) {
-        return (faceValue * capBps) / 10000;
+        return capBps == 0 ? 0 : (faceValue * capBps) / 10000;
     }
 
     function list(uint256 tokenId, uint256 price) external nonReentrant returns (uint256 listingId) {
         if (ticket.ownerOf(tokenId) != msg.sender) revert NotOwner();
-        uint256 cap = maxPrice();
-        if (price > cap) revert PriceAboveCap(price, cap);
-        if (price < royaltyFlat + feeFlat) revert PriceTooLow(price, royaltyFlat + feeFlat);
+        if (capBps != 0) {
+            uint256 cap = maxPrice();
+            if (price > cap) revert PriceAboveCap(price, cap);
+        }
+        if (price == 0) revert PriceTooLow(price, 1);
         listingId = nextListingId++;
         listings[listingId] = Listing(msg.sender, tokenId, price, true);
         ticket.transferFrom(msg.sender, address(this), tokenId);
@@ -96,12 +100,14 @@ contract Marketplace is ReentrancyGuard, IERC721Receiver {
         if (!l.active) revert NotActive();
         l.active = false;
         uint256 price = l.price;
-        uint256 proceeds = price - royaltyFlat - feeFlat;
-        usdc.safeTransferFrom(msg.sender, artist, royaltyFlat);
-        usdc.safeTransferFrom(msg.sender, platform, feeFlat);
+        uint256 royalty = (price * royaltyBps) / 10000;
+        uint256 fee = (price * feeBps) / 10000;
+        uint256 proceeds = price - royalty - fee;
+        usdc.safeTransferFrom(msg.sender, artist, royalty);
+        usdc.safeTransferFrom(msg.sender, platform, fee);
         usdc.safeTransferFrom(msg.sender, l.seller, proceeds);
         ticket.transferFrom(address(this), msg.sender, l.tokenId);
-        emit Sold(listingId, msg.sender, l.tokenId, price, royaltyFlat, feeFlat, proceeds);
+        emit Sold(listingId, msg.sender, l.tokenId, price, royalty, fee, proceeds);
     }
 
     function onERC721Received(address, address, uint256, bytes calldata) external pure returns (bytes4) {

@@ -33,17 +33,22 @@
       },
       {
         "internalType": "uint256",
-        "name": "royaltyFlat_",
+        "name": "royaltyBps_",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "feeFlat_",
+        "name": "feeBps_",
         "type": "uint256"
       }
     ],
     "stateMutability": "nonpayable",
     "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "BadBps",
+    "type": "error"
   },
   {
     "inputs": [],
@@ -268,7 +273,7 @@
   },
   {
     "inputs": [],
-    "name": "feeFlat",
+    "name": "feeBps",
     "outputs": [
       {
         "internalType": "uint256",
@@ -412,7 +417,7 @@
   },
   {
     "inputs": [],
-    "name": "royaltyFlat",
+    "name": "royaltyBps",
     "outputs": [
       {
         "internalType": "uint256",

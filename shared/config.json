@@ -1,11 +1,11 @@
 {
   "faceValue": "50000000",
   "buyerFee": "2500000",
-  "organizerShare": "49000000",
-  "platformShare": "1000000",
-  "resaleCapBps": 12000,
-  "royaltyFlat": "1000000",
-  "resaleFeeFlat": "1000000",
+  "organizerShare": "48500000",
+  "platformShare": "1500000",
+  "resaleCapBps": 0,
+  "royaltyBps": 1000,
+  "resaleFeeBps": 500,
   "eventName": "Demo Concert 2026",
   "maxSupply": 100
 }
