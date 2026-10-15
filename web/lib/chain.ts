@@ -36,12 +36,16 @@ export const chain = defineChain({
   name: dep.chainId === 31337 ? "Local Hardhat" : `Chain ${dep.chainId}`,
   nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
   rpcUrls: { default: { http: [rpcUrl] } },
+  // Multicall3 is deployed at this address on Base (and Base Sepolia); the local Hardhat chain has none.
+  ...(dep.chainId === 31337 ? {} : { contracts: { multicall3: { address: "0xcA11bde05977b3631167028862bE2a173976CA11" as Address } } }),
 });
-export const publicClient = createPublicClient({ chain, transport: http(rpcUrl) });
+// Reads made in the same tick are batched into one Multicall3 eth_call: /api/state does dozens of reads per poll,
+// which otherwise trips the free-tier request-rate limit of private RPCs.
+export const publicClient = createPublicClient({ chain, transport: http(rpcUrl), batch: dep.chainId === 31337 ? undefined : { multicall: { wait: 16 } } });
 // Log queries use a separate endpoint: free private RPC tiers (e.g. Alchemy: 10-block eth_getLogs range) reject
 // the wide pages we scan with, so they default to the deployment's public RPC even when RPC_URL is a private one.
 const logRpcUrl = process.env.LOGS_RPC_URL || dep.rpcUrl;
-const logClient = createPublicClient({ chain, transport: http(logRpcUrl) });
+const logClient = createPublicClient({ chain, transport: http(logRpcUrl, { retryCount: 6, retryDelay: 400 }) });
 
 type KeyMap = Record<string, { address: string; privateKey: string }>;
 
@@ -156,41 +160,73 @@ export function friendlyError(e: unknown): { error: string; errorName?: string }
     case "SoldOut":
       return { errorName: name, error: "Sold out" };
   }
-  if (/fetch failed|ECONNREFUSED|HTTP request failed/i.test(msg)) return { error: `Cannot reach chain RPC at ${rpcUrl}. Is the local node running?` };
+  // Never echo the RPC URL: private endpoints carry an API key.
+  if (/429|rate limit|too many requests|capacity/i.test(msg)) return { error: "The blockchain node is busy. Please try again in a few seconds." };
+  if (/fetch failed|ECONNREFUSED|HTTP request failed|timed out/i.test(msg)) return { error: "Cannot reach the blockchain node right now. Please try again in a moment." };
   if (/insufficient|exceeds balance/i.test(msg)) return { error: `Insufficient USDC balance. (${msg})` };
-  return { error: name ? `${name}: ${msg}` : msg, errorName: name };
+  const safe = msg.replace(/https?:\/\/\S+/g, "<url>");
+  return { error: name ? `${name}: ${safe}` : safe, errorName: name };
 }
 
 /**
  * Event logs from deployBlock to head, fetched in <=190-block pages (public RPCs cap eth_getLogs ranges)
  * with an in-memory cursor so each call only scans new blocks.
  */
+type EventLog = { args: unknown; transactionHash: string; blockNumber: bigint };
 const logCache = new Map<string, { to: bigint; logs: unknown[] }>();
-export async function getEvents(address: Address, abi: Abi, eventName: string): Promise<{ args: unknown; transactionHash: string; blockNumber: bigint }[]> {
+const scanning = new Map<string, Promise<EventLog[]>>();
+
+export function getEvents(address: Address, abi: Abi, eventName: string): Promise<EventLog[]> {
   const key = `${address}:${eventName}`;
+  // Concurrent callers (several pages poll at once) share one scan instead of multiplying the RPC load.
+  let p = scanning.get(key);
+  if (!p) {
+    p = scanEvents(key, address, abi, eventName).finally(() => scanning.delete(key));
+    scanning.set(key, p);
+  }
+  return p;
+}
+
+async function scanEvents(key: string, address: Address, abi: Abi, eventName: string): Promise<EventLog[]> {
   const head = await logClient.getBlockNumber();
   const c = logCache.get(key) ?? { to: deployBlock - 1n, logs: [] };
   const STEP = 190n;
+  const BATCH = 4;
   const ranges: [bigint, bigint][] = [];
   for (let f = c.to + 1n; f <= head; f += STEP) ranges.push([f, f + STEP - 1n > head ? head : f + STEP - 1n]);
-  const pages: unknown[][] = [];
-  for (let i = 0; i < ranges.length; i += 8) {
-    const batch = await Promise.all(ranges.slice(i, i + 8).map(([f, t]) => logClient.getContractEvents({ address, abi, eventName, fromBlock: f, toBlock: t })));
-    pages.push(...batch);
+
+  // Dedupe by (tx, logIndex): the overlap below deliberately refetches the newest blocks.
+  const merge = (base: unknown[], extra: unknown[][]) => {
+    const seen = new Set<string>();
+    return base.concat(...extra).filter((l) => {
+      const { transactionHash, logIndex } = l as { transactionHash: string; logIndex: number };
+      const id = `${transactionHash}:${logIndex}`;
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+  };
+  const save = (to: bigint, logs: unknown[]) => {
+    const cur = logCache.get(key);
+    if (!cur || cur.to < to) logCache.set(key, { to, logs }); // never move the cursor backwards
+  };
+
+  let to = c.to;
+  let logs = c.logs;
+  for (let i = 0; i < ranges.length; i += BATCH) {
+    const slice = ranges.slice(i, i + BATCH);
+    try {
+      const got = await Promise.all(slice.map(([f, t]) => logClient.getContractEvents({ address, abi, eventName, fromBlock: f, toBlock: t })));
+      logs = merge(logs, got);
+      to = slice[slice.length - 1][1];
+      save(to, logs);
+    } catch (e) {
+      // Public RPCs rate-limit big scans (HTTP 429). Progress so far is kept, so the next call resumes where this one stopped.
+      throw e;
+    }
   }
-  // Dedupe by (tx, logIndex): concurrent requests share this cache and can refetch the same range.
-  const seen = new Set<string>();
-  const logs = c.logs.concat(...pages).filter((l) => {
-    const { transactionHash, logIndex } = l as { transactionHash: string; logIndex: number };
-    const id = `${transactionHash}:${logIndex}`;
-    if (seen.has(id)) return false;
-    seen.add(id);
-    return true;
-  });
   // Public RPCs sit behind load balancers whose nodes lag each other, so keep a 15-block overlap:
   // the next call refetches the tail (deduped above) and cannot miss logs a lagging node hadn't seen yet.
-  const cursor = head > c.to + 15n ? head - 15n : c.to;
-  const cur = logCache.get(key);
-  if (!cur || cur.to < cursor) logCache.set(key, { to: cursor, logs }); // never move the cursor backwards
+  save(head > c.to + 15n ? head - 15n : c.to, logs);
   return logs as never;
 }

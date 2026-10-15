@@ -88,6 +88,7 @@ export async function GET(req: Request) {
     };
     return NextResponse.json(body);
   } catch (e) {
+    console.error("state failed:", String((e as Error).message).replace(/https?:\/\/\S+/g, "<url>").replace(/\s+/g, " ").slice(0, 300));
     return NextResponse.json({ ok: false, ...friendlyError(e) }, { status: 500 });
   }
 }
