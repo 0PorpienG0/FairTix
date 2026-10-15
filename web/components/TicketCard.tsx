@@ -11,7 +11,7 @@ export function TicketCard({ tokenId, badge, main, stub, tone = "default" }: {
   tone?: "default" | "listed";
 }) {
   return (
-    <article className={`ticket rise ${tone === "listed" ? "!border-white/40" : ""}`}>
+    <article className={`ticket rise ${tone === "listed" ? "!border-brand/60" : ""}`}>
       <div className="border-b border-edge bg-raise px-5 py-4">
         <div className="flex items-start justify-between gap-3">
           <div>

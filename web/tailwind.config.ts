@@ -8,7 +8,7 @@ const config: Config = {
         panel: "#111113",
         raise: "#18181b",
         edge: "#27272a",
-        brand: "#fafafa",
+        brand: "#4a7bd6",
         mint: "#34d399",
       },
       fontFamily: {

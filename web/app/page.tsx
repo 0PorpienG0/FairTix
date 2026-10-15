@@ -77,7 +77,7 @@ export default function BuyPage() {
             <ol className="mt-4 grid gap-4 sm:grid-cols-3">
               {steps.map((s) => (
                 <li key={s.n} className="rounded-xl border border-edge bg-raise p-4">
-                  <span className="grid h-7 w-7 place-items-center rounded-full bg-white text-sm font-bold text-ink">{s.n}</span>
+                  <span className="grid h-7 w-7 place-items-center rounded-full bg-brand text-sm font-bold text-white">{s.n}</span>
                   <div className="mt-3 font-semibold">{s.t}</div>
                   <p className="mt-1 text-sm text-slate-400">{s.d}</p>
                 </li>
@@ -94,7 +94,7 @@ export default function BuyPage() {
               <span className="label">1 per order</span>
             </div>
 
-            <div className="rounded-xl border border-white/70 bg-white/[0.03] p-4">
+            <div className="rounded-xl border border-brand bg-brand/10 p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="font-semibold">{EVENT.tier}</div>
@@ -113,7 +113,7 @@ export default function BuyPage() {
                   <span className="text-slate-500">{data ? `${sold}/${max} sold` : ""}</span>
                 </div>
                 <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/10" role="progressbar" aria-valuenow={Math.round(pctSold)} aria-valuemin={0} aria-valuemax={100} aria-label="Tickets sold">
-                  <div className="h-full rounded-full bg-white transition-all" style={{ width: `${pctSold}%` }} />
+                  <div className="h-full rounded-full bg-brand transition-all" style={{ width: `${pctSold}%` }} />
                 </div>
               </div>
             </div>

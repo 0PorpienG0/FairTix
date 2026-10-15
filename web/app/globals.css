@@ -5,14 +5,14 @@
 body { @apply bg-ink text-slate-100 antialiased; }
 
 .card { @apply rounded-2xl border border-edge bg-panel p-5; }
-.btn { @apply inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-ink transition hover:bg-white/90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-40; }
+.btn { @apply inline-flex items-center justify-center gap-2 rounded-xl bg-brand px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand/85 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-40; }
 .btn-ghost { @apply inline-flex items-center justify-center rounded-xl border border-edge px-3 py-2 text-sm text-slate-200 transition hover:border-slate-500 hover:bg-white/5 disabled:opacity-50; }
-.input { @apply w-full rounded-xl border border-edge bg-ink px-3 py-2 text-sm outline-none focus:border-slate-300; }
+.input { @apply w-full rounded-xl border border-edge bg-ink px-3 py-2 text-sm outline-none focus:border-brand; }
 .label { @apply text-[11px] font-medium uppercase tracking-widest text-slate-500; }
 .chip { @apply inline-flex items-center rounded-full border border-edge px-3 py-1 text-xs font-medium text-slate-300; }
 
 /* Flat banner surface (hero, ticket header) */
-.poster { @apply border border-edge bg-panel; }
+.poster { @apply border border-brand/25 bg-brand/[0.07]; }
 
 /* Ticket shape: main body, dashed perforation with side notches, stub */
 .ticket { @apply relative overflow-hidden rounded-2xl border border-edge bg-panel; }
