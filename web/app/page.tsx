@@ -62,11 +62,11 @@ export default function BuyPage() {
             <h2 className="font-display text-xl font-bold">About this event</h2>
             <p className="mt-2 text-sm leading-relaxed text-slate-300">
               One night, one stage. Every ticket is a unique digital ticket tied to your account, so it can&apos;t be copied or faked.
-              Tickets can only change hands through the official resale market, where the artist is paid on every resale.
+              Tickets can only change hands through the official resale market, where a flat transaction fee applies and sellers are paid automatically.
             </p>
             <ul className="mt-4 grid gap-3 sm:grid-cols-2">
               <Perk t="No fake tickets" d="Each ticket is verified on a public blockchain." />
-              <Perk t="Artists get paid on resale" d={`${config.royaltyBps / 100}% of every resale goes to the artist.`} />
+              <Perk t="Flat resale fee" d={`One ${(config.royaltyBps + config.resaleFeeBps) / 100}% transaction fee on resale. No hidden charges.`} />
               <Perk t="Organizer paid instantly" d={`${usd(config.organizerShare)} per ticket, at the moment of sale.`} />
               <Perk t="Pay by card" d="No wallet, no crypto knowledge needed." />
             </ul>

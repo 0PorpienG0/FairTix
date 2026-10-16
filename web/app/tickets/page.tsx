@@ -11,7 +11,8 @@ import type { Listing } from "@/lib/types";
 const cap = (BigInt(config.faceValue) * BigInt(CAP_BPS)) / 10000n; // 0n = no cap
 const pctRoy = Number(ROYALTY_BPS) / 100;
 const pctFee = Number(FEE_BPS) / 100;
-const pctSeller = 100 - pctRoy - pctFee;
+const pctTotal = pctRoy + pctFee; // shown to users as one transaction fee
+const pctSeller = 100 - pctTotal;
 
 export default function TicketsPage() {
   const { wallet, label, signedIn, signIn } = useWallet();
@@ -111,7 +112,7 @@ export default function TicketsPage() {
             return (
               <TicketCard key={l.id} tokenId={l.tokenId}
                 badge={<><Badge>Seller: <span className="capitalize">{l.sellerName ?? l.seller.slice(0, 8)}</span></Badge></>}
-                main={<p className="text-xs text-slate-400">Includes {usd(sp.royalty)} artist royalty ({pctRoy}%) and {usd(sp.fee)} platform fee ({pctFee}%).</p>}
+                main={<p className="text-xs text-slate-400">Includes a {pctTotal}% transaction fee ({usd(sp.royalty + sp.fee)}).</p>}
                 stub={
                   <div className="flex items-center gap-3">
                     <div className="font-display text-2xl font-bold">{usd(l.price)}</div>
@@ -164,8 +165,7 @@ function OwnedTicket({ tokenId, used, wallet, busy, onSubmit }: { tokenId: strin
               </div>
               <dl className="space-y-1 rounded-lg bg-white/5 p-3 text-xs">
                 <Line k="Sale price" v={price !== null ? usd(price) : "—"} />
-                <Line k={`Artist royalty (${pctRoy}%)`} v={sp ? `-${usd(sp.royalty)}` : "—"} />
-                <Line k={`Platform fee (${pctFee}%)`} v={sp ? `-${usd(sp.fee)}` : "—"} />
+                <Line k={`Transaction fee (${pctTotal}%)`} v={sp ? `-${usd(sp.royalty + sp.fee)}` : "—"} />
                 <div className="border-t border-edge pt-1" />
                 <Line k={`You receive (${pctSeller}%)`} v={sp ? usd(sp.seller) : "—"} strong />
               </dl>

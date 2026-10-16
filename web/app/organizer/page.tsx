@@ -75,14 +75,14 @@ export default function OrganizerPage() {
       </section>
 
       <section className="card">
-        <h2 className="mb-3 font-display text-lg font-bold">Resale earnings (royalty + platform fee)</h2>
+        <h2 className="mb-3 font-display text-lg font-bold">Resale earnings (15% transaction fee)</h2>
         {data && data.resales.length === 0 && <p className="text-sm text-slate-400">No resales yet.</p>}
         <ul className="divide-y divide-edge text-sm">
           {data?.resales.map((r) => (
             <li key={r.txHash} className="flex flex-wrap items-center justify-between gap-2 py-2">
               <span>Ticket #{r.tokenId} resold for <b>{usd(r.price)}</b></span>
               <span className="text-xs text-slate-400">
-                artist {usd(r.royalty, { sign: true })} · platform {usd(r.fee, { sign: true })} · seller {usd(r.sellerProceeds, { sign: true })} · <TxHash hash={r.txHash} />
+                fee {usd(BigInt(r.royalty) + BigInt(r.fee), { sign: true })} · seller {usd(r.sellerProceeds, { sign: true })} · <TxHash hash={r.txHash} />
               </span>
             </li>
           ))}

@@ -78,7 +78,7 @@ export default function MarketplacePage() {
             <span className="chip">Official resale</span>
             <h1 className="mt-3 font-display text-3xl font-bold text-white sm:text-4xl">Resale market</h1>
             <p className="mt-1 max-w-xl text-sm text-slate-400">
-              Verified tickets from real fans for {data?.eventName ?? "…"}. The artist and platform are paid automatically on every sale.
+              Verified tickets from real fans for {data?.eventName ?? "…"}. A flat {data ? (data.royaltyBps + data.feeBps) / 100 : 15}% transaction fee is taken automatically on every sale.
               {signedIn ? <>You&apos;re buying as <span className="font-semibold capitalize">{label}</span>.</> : "Sign in to buy."}
               {" "}Pay with your USDC balance from past sales, or by card if you don&apos;t have enough.
             </p>
@@ -96,7 +96,7 @@ export default function MarketplacePage() {
         <Stat k="Listed now" v={s ? String(s.activeCount) : "…"} />
         <Stat k="Resales completed" v={s ? String(s.totalResales) : "…"} />
         <Stat k="Total volume" v={s ? usd(s.totalVolume) : "…"} />
-        <Stat k="Resale fees" v={data ? `${data.royaltyBps / 100}% artist · ${data.feeBps / 100}% platform` : "…"} small />
+        <Stat k="Resale fee" v={data ? `${(data.royaltyBps + data.feeBps) / 100}% transaction fee` : "…"} small />
       </div>
 
       <section>
@@ -135,7 +135,7 @@ export default function MarketplacePage() {
                 <span className="font-semibold capitalize">{r.buyerName ?? r.buyer.slice(0, 8)}</span> bought <b>Ticket #{r.tokenId}</b> for <span className="font-mono">{usd(r.price)}</span>
               </div>
               <div className="font-mono text-xs text-slate-400">
-                artist {usd(r.royalty)} · platform {usd(r.fee)} · seller {usd(r.sellerProceeds)}
+                fee {usd(BigInt(r.royalty) + BigInt(r.fee))} · seller {usd(r.sellerProceeds)}
               </div>
               <div className="text-xs text-slate-400">tx <TxHash hash={r.txHash} /></div>
             </div>
@@ -173,7 +173,7 @@ function ListingCard({ l, data, mine, busy, wallet, act }: {
         {mine && <Badge tone="brand">Your listing</Badge>}
       </>}
       main={<p className="text-xs leading-relaxed text-slate-400">
-        {usd(royalty)} ({data.royaltyBps / 100}%) to the artist · {usd(fee)} ({data.feeBps / 100}%) to the platform · seller receives <b className="text-mint">{usd(receive)}</b>
+        {usd(royalty + fee)} ({(data.royaltyBps + data.feeBps) / 100}%) transaction fee · seller receives <b className="text-mint">{usd(receive)}</b>
       </p>}
       stub={mine ? (
         <button className="btn-ghost w-full" disabled={busy === `c${l.id}`}

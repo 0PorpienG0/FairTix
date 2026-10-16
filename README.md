@@ -11,7 +11,7 @@ No crypto knowledge needed: fans sign in with Google and pay like any online sho
 |---|---|
 | Fake and duplicated tickets | Every ticket is a unique NFT on a public chain; entry is checked against on-chain ownership |
 | Scalpers and untraceable resale | Tickets cannot be transferred freely. They can only change hands through the official market |
-| Artists earn nothing from resale | **10%** of every resale goes to the artist automatically, **5%** to the platform |
+| Artists earn nothing from resale | A flat **15% transaction fee** is taken on every resale automatically (on-chain it is split 10% artist royalty / 5% platform) |
 | Organizers wait days for payout | Organizer receives **$48.50 of a $50 ticket at the moment of sale** |
 | Screenshot / shared-QR entry fraud | Entry QR re-signs every 15 s and expires 30 s after it is made; a ticket can be admitted only once |
 
@@ -20,7 +20,7 @@ No crypto knowledge needed: fans sign in with Google and pay like any online sho
 - **Card checkout** (Stripe Checkout, test mode). A webhook mints the ticket to the buyer's wallet. Idempotent: replayed webhooks never mint twice.
 - **Google sign-in** (Clerk). Each user gets a wallet derived on the server, so there is nothing to install or remember.
 - **Primary sale contract** splits revenue on-chain: organizer $48.50 + platform $1.50 per $50 ticket, plus a $2.50 service fee paid by the buyer.
-- **Resale marketplace** with escrow. Seller lists, buyer pays, the contract splits the money (85% seller / 10% artist / 5% platform) and moves the ticket atomically.
+- **Resale marketplace** with escrow. Seller lists, buyer pays, the contract takes a 15% transaction fee (split on-chain: 10% artist / 5% platform) and pays the seller 85% and moves the ticket atomically.
 - **Pay for a resale with USDC or by card.** Money from selling a ticket lands in the user's USDC balance and can pay for the next ticket. Not enough? Checkout falls back to a card payment.
 - **Rotating entry QR + gate scanner.** `/scan` (PIN-protected) verifies the code against live ownership and records the entry on-chain through a `CheckIn` contract.
 - **Organizer dashboard** with live revenue, artist royalty and platform fees read from the chain.
@@ -35,8 +35,8 @@ Primary sale   card ($52.50) ──Stripe──▶ webhook ──▶ treasury pa
 
 Resale         seller lists (NFT held in escrow) ──▶ buyer pays USDC (or card)
                                                                  ├─ 85% seller
-                                                                 ├─ 10% artist royalty
-                                                                 ├─  5% platform
+                                                                 ├─ 15% transaction fee
+                                                                 │     (on-chain: 10% artist royalty + 5% platform)
                                                                  └─ NFT moves to the buyer
 ```
 
@@ -80,7 +80,7 @@ Browse them on [sepolia.basescan.org](https://sepolia.basescan.org).
 1. Open the live demo and sign in with Google.
 2. **Buy a ticket.** On the Stripe page use the test card `4242 4242 4242 4242`, any future date, any CVC. The ticket appears under *My tickets* a few seconds later.
 3. Open the **Organizer** page in another tab: the revenue split shows up instantly.
-4. **Resell** your ticket from *My tickets*. The preview shows what the seller, artist and platform receive.
+4. **Resell** your ticket from *My tickets*. The preview shows the 15% transaction fee and what the seller receives.
 5. With a second account, **buy it** on the *Resale market*. Pay with USDC if you have it, otherwise by card.
 6. **Entry:** *My tickets → Show entry QR*, then scan it on `/scan` with the gate PIN.
 

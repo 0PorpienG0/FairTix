@@ -11,7 +11,7 @@ const display = Space_Grotesk({ subsets: ["latin"], variable: "--font-display", 
 
 export const metadata: Metadata = {
   title: "FairTix - fair on-chain ticketing",
-  description: "Primary sales via card, fair resale with artist royalties, instant organizer payouts.",
+  description: "Primary sales via card, fair resale with a flat transaction fee, instant organizer payouts.",
 };
 
 const clerkOn = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
