@@ -33,10 +33,10 @@ export const addr = {
 const rpcUrl = process.env.RPC_URL || dep.rpcUrl;
 export const chain = defineChain({
   id: dep.chainId,
-  name: dep.chainId === 31337 ? "Local Hardhat" : `Chain ${dep.chainId}`,
-  nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+  name: dep.chainId === 31337 ? "Local Hardhat" : dep.chainId === 43113 ? "Avalanche Fuji" : dep.chainId === 84532 ? "Base Sepolia" : `Chain ${dep.chainId}`,
+  nativeCurrency: dep.chainId === 43113 ? { name: "Avalanche", symbol: "AVAX", decimals: 18 } : { name: "Ether", symbol: "ETH", decimals: 18 },
   rpcUrls: { default: { http: [rpcUrl] } },
-  // Multicall3 is deployed at this address on Base (and Base Sepolia); the local Hardhat chain has none.
+  // Multicall3 is deployed at this address on Base, Base Sepolia and Avalanche (Fuji); the local Hardhat chain has none.
   ...(dep.chainId === 31337 ? {} : { contracts: { multicall3: { address: "0xcA11bde05977b3631167028862bE2a173976CA11" as Address } } }),
 });
 // Reads made in the same tick are batched into one Multicall3 eth_call: /api/state does dozens of reads per poll,
@@ -44,7 +44,9 @@ export const chain = defineChain({
 export const publicClient = createPublicClient({ chain, transport: http(rpcUrl), batch: dep.chainId === 31337 ? undefined : { multicall: { wait: 16 } } });
 // Log queries use a separate endpoint: free private RPC tiers (e.g. Alchemy: 10-block eth_getLogs range) reject
 // the wide pages we scan with, so they default to the deployment's public RPC even when RPC_URL is a private one.
-const logRpcUrl = process.env.LOGS_RPC_URL || dep.rpcUrl;
+// The official Fuji endpoint caps getLogs at 100 blocks; publicnode allows 50k.
+const logRpcUrl = process.env.LOGS_RPC_URL || (dep.chainId === 43113 ? "https://avalanche-fuji-c-chain-rpc.publicnode.com" : dep.rpcUrl);
+const LOG_STEP = BigInt(process.env.LOG_STEP || (dep.chainId === 43113 ? 40000 : 190));
 const logClient = createPublicClient({ chain, transport: http(logRpcUrl, { retryCount: 6, retryDelay: 400 }) });
 
 type KeyMap = Record<string, { address: string; privateKey: string }>;
@@ -190,7 +192,7 @@ export function getEvents(address: Address, abi: Abi, eventName: string): Promis
 async function scanEvents(key: string, address: Address, abi: Abi, eventName: string): Promise<EventLog[]> {
   const head = await logClient.getBlockNumber();
   const c = logCache.get(key) ?? { to: deployBlock - 1n, logs: [] };
-  const STEP = 190n;
+  const STEP = LOG_STEP;
   const BATCH = 4;
   const ranges: [bigint, bigint][] = [];
   for (let f = c.to + 1n; f <= head; f += STEP) ranges.push([f, f + STEP - 1n > head ? head : f + STEP - 1n]);

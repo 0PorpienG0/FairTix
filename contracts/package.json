@@ -8,6 +8,8 @@
     "node": "hardhat node",
     "deploy:local": "hardhat run scripts/deploy.ts --network localhost",
     "deploy:sepolia": "hardhat run scripts/deploy.ts --network baseSepolia",
+    "deploy:fuji": "hardhat run scripts/deploy.ts --network avalancheFuji",
+    "deploy:checkin:fuji": "hardhat run scripts/deploy-checkin.ts --network avalancheFuji",
     "deploy:checkin:sepolia": "hardhat run scripts/deploy-checkin.ts --network baseSepolia"
   },
   "devDependencies": {

@@ -97,7 +97,7 @@ async function main() {
     await (await usdc.mint(accounts.bob, m(1000))).wait();
   }
   if (!isLocal) {
-    // Wallets that sign txs server-side need a little ETH for gas.
+    // Wallets that sign txs server-side need a little native token (ETH, or AVAX on Fuji) for gas.
     const gas = ethers.parseEther(process.env.GAS_FUND_ETH || "0.002");
     for (const n of ["treasury", "alice", "bob"]) {
       await (await deployer.sendTransaction({ to: accounts[n], value: gas })).wait();
@@ -105,7 +105,11 @@ async function main() {
   }
   await (await usdc.connect(signers.treasury).approve(saleAddr, ethers.MaxUint256)).wait();
 
-  const rpcUrl = isLocal ? "http://127.0.0.1:8545" : (process.env.BASE_SEPOLIA_RPC || "https://sepolia.base.org");
+  const rpcUrl = isLocal
+    ? "http://127.0.0.1:8545"
+    : chainId === 43113
+      ? process.env.FUJI_RPC || "https://api.avax-test.network/ext/bc/C/rpc"
+      : process.env.BASE_SEPOLIA_RPC || "https://sepolia.base.org";
   const { deployer: _omit, ...publicAccounts } = accounts;
   const deployment = {
     chainId, rpcUrl, deployBlock: deployBlock.toString(),

@@ -1,0 +1,18 @@
+{
+  "chainId": 84532,
+  "rpcUrl": "https://sepolia.base.org",
+  "deployBlock": "48145399",
+  "usdc": "0xca650Fee0e61F2120A34389890AcC476AFbF8896",
+  "ticket": "0x2bFB5c70051f7470aeA892D041f8054931938fF3",
+  "primarySale": "0x09F05bfD139A528D20e3EEb11e4F72e1077604c8",
+  "marketplace": "0xbF8e87702ec49310fa704Ef6f2994d2859cFbDf4",
+  "accounts": {
+    "organizer": "0x855D653B4CA090e583D0A14C8F757Cc3e28df452",
+    "platform": "0x3F372De34453e112693D288c2e1DF6881665D9C8",
+    "artist": "0xD92a1FB12bF3518C2320474A569Ff26263b779Cb",
+    "treasury": "0x8bDF77be7a45dFDd20F63788A0C1690B9B2CcFfd",
+    "alice": "0x970bf460852f2304B1611b1623CBA508895B8a20",
+    "bob": "0xC8E2ecbfFFa40c7843Dbb7586B46c6c5f6070F01"
+  },
+  "checkIn": "0x2579AA8710c9987c81dA5c846Ead39Bd85C3eBac"
+}

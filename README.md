@@ -3,7 +3,7 @@
 **Fair, on-chain ticketing.** Buy with a card, resell safely, and let the artist earn on every resale.
 No crypto knowledge needed: fans sign in with Google and pay like any online shop, while tickets live on a public blockchain.
 
-**Live demo:** https://fairtix-demo.vercel.app (Base Sepolia testnet + Stripe test mode, no real money moves)
+**Live demo:** https://fairtix-demo.vercel.app (Avalanche Fuji testnet + Stripe test mode, no real money moves)
 
 ## The problem
 
@@ -63,17 +63,17 @@ scripts/     end-to-end flow against a running chain + web app
 
 **No database.** The chain is the database: ownership, sales, listings and check-ins are read from contracts and events. Stripe holds the payment-idempotency record (on the PaymentIntent metadata).
 
-### Deployed contracts (Base Sepolia, chain id 84532)
+### Deployed contracts (Avalanche Fuji, chain id 43113)
 
 | Contract | Address |
 |---|---|
-| MockUSDC | `0xca650Fee0e61F2120A34389890AcC476AFbF8896` |
-| TicketNFT | `0x2bFB5c70051f7470aeA892D041f8054931938fF3` |
-| PrimarySale | `0x09F05bfD139A528D20e3EEb11e4F72e1077604c8` |
-| Marketplace | `0xbF8e87702ec49310fa704Ef6f2994d2859cFbDf4` |
-| CheckIn | `0x2579AA8710c9987c81dA5c846Ead39Bd85C3eBac` |
+| MockUSDC | `0x9d77E1d099fcde6B9d9A54EdE742a62953e7a23d` |
+| TicketNFT | `0x53874ddFfc571B8aa44512bB670955699c46431b` |
+| PrimarySale | `0x7d2edA461141587e0c9e1cAD9aDEEa7299f3cE2f` |
+| Marketplace | `0x816A8859b163EEE4ACa7c657A025D20bDAe884B0` |
+| CheckIn | `0x92A241B8c3424728Dc1cf667cE74dC6ae96Fb462` |
 
-Browse them on [sepolia.basescan.org](https://sepolia.basescan.org).
+Browse them on the [Avalanche Fuji explorer](https://explorer-test.avax.network/c-chain). The previous Base Sepolia deployment is kept in [`shared/deployment.base-sepolia.json`](shared/deployment.base-sepolia.json).
 
 ## Try it
 
@@ -124,8 +124,8 @@ Never commit `.env*` or `shared/testnet-keys.json` (both are git-ignored). `shar
 
 ```bash
 cd contracts
-npx hardhat run scripts/deploy.ts --network baseSepolia          # needs PRIVATE_KEY + faucet ETH
-npx hardhat run scripts/deploy-checkin.ts --network baseSepolia  # run after deploy.ts
+npx hardhat run scripts/deploy.ts --network avalancheFuji        # needs PRIVATE_KEY + faucet AVAX (or --network baseSepolia)
+npx hardhat run scripts/deploy-checkin.ts --network avalancheFuji  # run after deploy.ts
 ```
 
 `deploy.ts` generates throwaway wallets into `shared/testnet-keys.json` (git-ignored) and funds them from the deployer.

@@ -1,7 +1,7 @@
 import "server-only";
 import { auth } from "@clerk/nextjs/server";
 import { parseEther, type Address } from "viem";
-import { publicClient, resolveWallet, userWallet, walletFor } from "./chain";
+import { dep, publicClient, resolveWallet, userWallet, walletFor } from "./chain";
 
 export const clerkEnabled = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
@@ -20,7 +20,8 @@ export async function identify(demoWallet?: string | null): Promise<Identity | n
   return w ? { name: w.name, address: w.address } : null;
 }
 
-const GAS_DRIP = parseEther(process.env.USER_GAS_ETH || "0.00001");
+// Native-token drip for a new user wallet: ETH on Base Sepolia, AVAX on Fuji (whose base fee can rise to 25 nAVAX).
+const GAS_DRIP = parseEther(process.env.USER_GAS_ETH || (dep.chainId === 43113 ? "0.02" : "0.00001"));
 const funded = new Set<string>();
 let queue: Promise<unknown> = Promise.resolve();
 

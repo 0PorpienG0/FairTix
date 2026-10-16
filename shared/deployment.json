@@ -1,11 +1,11 @@
 {
-  "chainId": 84532,
-  "rpcUrl": "https://sepolia.base.org",
-  "deployBlock": "48145399",
-  "usdc": "0xca650Fee0e61F2120A34389890AcC476AFbF8896",
-  "ticket": "0x2bFB5c70051f7470aeA892D041f8054931938fF3",
-  "primarySale": "0x09F05bfD139A528D20e3EEb11e4F72e1077604c8",
-  "marketplace": "0xbF8e87702ec49310fa704Ef6f2994d2859cFbDf4",
+  "chainId": 43113,
+  "rpcUrl": "https://api.avax-test.network/ext/bc/C/rpc",
+  "deployBlock": "59541113",
+  "usdc": "0x9d77E1d099fcde6B9d9A54EdE742a62953e7a23d",
+  "ticket": "0x53874ddFfc571B8aa44512bB670955699c46431b",
+  "primarySale": "0x7d2edA461141587e0c9e1cAD9aDEEa7299f3cE2f",
+  "marketplace": "0x816A8859b163EEE4ACa7c657A025D20bDAe884B0",
   "accounts": {
     "organizer": "0x855D653B4CA090e583D0A14C8F757Cc3e28df452",
     "platform": "0x3F372De34453e112693D288c2e1DF6881665D9C8",
@@ -14,5 +14,5 @@
     "alice": "0x970bf460852f2304B1611b1623CBA508895B8a20",
     "bob": "0xC8E2ecbfFFa40c7843Dbb7586B46c6c5f6070F01"
   },
-  "checkIn": "0x2579AA8710c9987c81dA5c846Ead39Bd85C3eBac"
+  "checkIn": "0x92A241B8c3424728Dc1cf667cE74dC6ae96Fb462"
 }
