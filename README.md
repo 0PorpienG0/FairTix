@@ -82,7 +82,7 @@ Browse them on the [Avalanche Fuji explorer](https://explorer-test.avax.network/
 3. Open the **Organizer** page in another tab: the revenue split shows up instantly.
 4. **Resell** your ticket from *My tickets*. The preview shows the 15% transaction fee and what the seller receives.
 5. With a second account, **buy it** on the *Resale market*. Pay with USDC if you have it, otherwise by card.
-6. **Entry:** *My tickets → Show entry QR*, then scan it on `/scan` with the gate PIN.
+6. **Entry:** *My tickets → Show entry QR*, then scan it on `/scan` with the demo gate PIN `123456` (demo only; a scanned ticket cannot be reused, so buy a spare ticket to try it).
 
 ## Run locally
 
