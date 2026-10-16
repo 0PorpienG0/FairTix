@@ -5,5 +5,5 @@ export const EVENT = {
   venue: "Impact Arena, Bangkok",
   category: "Live concert",
   tier: "General Admission",
-  network: process.env.NEXT_PUBLIC_NETWORK_NAME || (process.env.NEXT_PUBLIC_EXPLORER_URL ? "Base Sepolia testnet" : "Local test chain"),
+  network: process.env.NEXT_PUBLIC_NETWORK_NAME || (process.env.NEXT_PUBLIC_EXPLORER_URL ? "Public testnet" : "Local test chain"),
 };
