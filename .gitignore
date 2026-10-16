@@ -6,3 +6,6 @@ artifacts
 typechain-types
 shared/testnet-keys.json
 *.log
+
+# local dev-server launch config
+.claude/
